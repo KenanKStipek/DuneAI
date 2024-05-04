@@ -58,3 +58,5 @@ TODO:
 - [ ] Porting
   - [ ] Port to Python
   - [ ] Port to Java
+
+**...and yes, I recognize the subtle oxymoron of the name and the in-universe namesake.**
