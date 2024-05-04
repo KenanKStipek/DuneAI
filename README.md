@@ -46,6 +46,7 @@ TODO:
   - [ ] Generators for Meta Prompts
   - [ ] Generators for Dynamics
 - [x] Side Effects and Hooks
+- [ ] Support .env files for secrets
 - [ ] Update Readme
 - [ ] Adaptable Runtime Compatibility
   - [x] Node.js
