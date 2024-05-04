@@ -16,6 +16,13 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "dev": "ts-node src/app.ts",
+    "run": "ts-node src/skeleton/src/index.ts",
     "setup": "ts-node scripts/setup.ts"
+  },
+  "dependencies": {
+    "bottleneck": "^2.19.5",
+    "gpt4all": "^4.0.0",
+    "node-sd-webui": "^0.0.8",
+    "openai": "^4.38.5"
   }
 }
