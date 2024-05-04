@@ -1,3 +1,5 @@
+![DuneAI Logo](./public/DuneAIGithub.png)
+
 # DuneAI
 
 ## Introduction
