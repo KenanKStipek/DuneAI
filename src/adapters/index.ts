@@ -1,4 +1,4 @@
-export { ask } from "./gpt4all";
+export { ask } from "./openai";
 
 export const MODELS = {
   GPT_FOUR: "gpt-4-0125-preview",

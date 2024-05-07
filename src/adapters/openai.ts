@@ -24,7 +24,7 @@ const getCompletion = async (
 };
 
 export const ask = async (prompt: string, options?: any) => {
-  return await throttledOperation(() => getCompletion(prompt, options), {
+  return (await throttledOperation(() => getCompletion(prompt, options), {
     id: prompt,
-  });
+  })) as string;
 };

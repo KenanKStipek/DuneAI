@@ -14,11 +14,11 @@
     "typescript": "^5.4.5"
   },
   "scripts": {
-    "build": "ttsc",
+    "build": "tsc",
     "start": "node dist/app.js",
-    "dev": "ts-node -r ttypescript src/app.ts",
-    "run": "ts-node -r ttypescript src/skeleton/src/index.ts",
-    "setup": "ts-node -r ttypescript scripts/setup.ts"
+    "dev": "ts-node src/app.ts",
+    "run": "ts-node src/skeleton/src/index.ts",
+    "setup": "ts-node scripts/setup.ts"
   },
   "dependencies": {
     "bottleneck": "^2.19.5",

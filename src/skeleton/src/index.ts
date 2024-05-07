@@ -1,8 +1,10 @@
 import { runPrimeDynamic } from "./dynamics";
 
 (async () => {
-  const completion = await runPrimeDynamic();
-  // const completion = await action.run()
-
-  console.log(completion);
+  const result = await runPrimeDynamic({
+    genre: "fantasy",
+    characterCount: 5,
+    totalPageLength: 20,
+  });
+  console.log(result);
 })();

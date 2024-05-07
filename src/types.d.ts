@@ -1,34 +1,40 @@
-import { MODELS } from "./adapters";
 export type AIModel = (typeof MODELS)[keyof typeof MODELS];
 
 export type DynamicTypeKind = "recursive" | "chainOfThought" | "treeOfThought";
-export type Hook = () => void | Promise<void>;
+
+export type Hook = (
+  params?: any,
+  dynamic?: DynamicType,
+) => void | Promise<void>;
+
+export type ContentFunction = (params: Record<string, any>) => string;
 
 export interface MetaPromptType {
-  content: string;
-  params: Record<string, any>;
+  name: string;
+  content: string | ContentFunction;
   dynamics: DynamicType[];
   model: AIModel;
-  runMetaPrompt?: (input?: string) => Promise<{}>;
+  run: (
+    dynamic: DynamicType,
+    input?: any,
+  ) => Promise<string | Record<string, string>>;
+  params?: Record<string, any>;
   beforeExecute?: Hook;
   afterExecute?: Hook;
 }
 
 export interface DynamicType {
+  name: string;
   kind: DynamicTypeKind;
   metaPrompts: MetaPromptType[];
-  dynamics?: DynamicType[]; // Optional array of sub-dynamics
+  shouldContinue: Boolean;
+  dynamics?: DynamicType[];
   processingTime?: number;
-  run: (params?: any) => Promise<any>; // Allow parameters to be passed
+  run: (
+    dynamic: DynamicType,
+    input?: any,
+  ) => Promise<string | Record<string, string>>;
   beforeExecute?: Hook;
   afterExecute?: Hook;
-}
-
-export interface PrimeDynamicType {
-  id: string;
-  description: string;
-  metaPrompts: MetaPromptType[];
-  run: () => Promise<void>;
-  beforeExecute?: Hook;
-  afterExecute?: Hook;
+  params?: any;
 }
