@@ -2,6 +2,8 @@ import {
   DynamicType,
   DynamicTypeKind,
   MetaPromptType,
+  RecursiveDynamicType,
+  NonRecursiveDynamicType,
   Hook,
 } from "../../types";
 
@@ -16,6 +18,7 @@ export const defaultDynamic: DynamicType = {
 
     let result: any = this.params; // Initialize result with incoming params
     switch (this.kind) {
+      //@ts-ignore
       case "recursive":
         result = await runRecursive(this, previousResult);
         break;
@@ -35,18 +38,9 @@ export const defaultDynamic: DynamicType = {
   },
   beforeExecute: () => console.log("Preparing dynamic..."),
   afterExecute: () => console.log("Dynamic completed."),
-  shouldContinue: false,
 };
 
-export function createDynamic({
-  name,
-  kind,
-  metaPrompts,
-  beforeExecute,
-  afterExecute,
-  params = {},
-  dynamics = [],
-}: {
+export function createDynamic(params: {
   name: string;
   kind: DynamicTypeKind;
   metaPrompts: MetaPromptType[];
@@ -54,17 +48,24 @@ export function createDynamic({
   afterExecute?: Hook;
   params?: any;
   dynamics?: DynamicType[];
+  shouldContinue?: boolean;
 }): DynamicType {
-  return {
-    ...defaultDynamic,
-    name,
-    kind,
-    metaPrompts,
-    dynamics,
-    beforeExecute,
-    afterExecute,
-    params,
-  };
+  if (params.kind === "recursive" && params.shouldContinue === undefined) {
+    throw new Error("shouldContinue must be defined for recursive dynamics");
+  }
+
+  if (params.kind === "recursive") {
+    return {
+      ...defaultDynamic,
+      ...params,
+      shouldContinue: params.shouldContinue!,
+    } as RecursiveDynamicType;
+  } else {
+    return {
+      ...defaultDynamic,
+      ...params,
+    } as NonRecursiveDynamicType;
+  }
 }
 
 async function runChainOfThought(dynamic: DynamicType, previousResult: any) {
@@ -101,19 +102,25 @@ async function runChainOfThought(dynamic: DynamicType, previousResult: any) {
 async function runRecursive(dynamic: DynamicType, previousResult: any) {
   console.log("Running Recursive Dynamic");
 
+  if (dynamic.kind !== "recursive") {
+    throw new Error("runRecursive called on a non-recursive dynamic");
+  }
+  const recursiveDynamic = dynamic as RecursiveDynamicType;
+
   dynamic.params = { ...dynamic.params, ...previousResult };
 
   let result = {};
 
-  const items = [...dynamic.metaPrompts, ...(dynamic.dynamics || [])];
-
-  for (const item of items) {
-    const output = await item.run(dynamic, result);
-    if (typeof output === "object" && output !== null) {
-      result = { ...result, ...output };
-      dynamic.params = { ...dynamic.params, ...output };
+  do {
+    const items = [...dynamic.metaPrompts, ...(dynamic.dynamics || [])];
+    for (const item of items) {
+      const output = await item.run(dynamic, result);
+      if (typeof output === "object" && output !== null) {
+        result = { ...result, ...output };
+        dynamic.params = { ...dynamic.params, ...output };
+      }
     }
-  }
+  } while (recursiveDynamic.shouldContinue);
 
   return result;
 }

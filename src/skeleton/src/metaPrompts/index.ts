@@ -23,8 +23,7 @@ export const dynamicStoryWritingPrompt: MetaPromptType = createMetaPrompt({
   content: (params) => `
 You are writing a story, here is the information for the story:
 Story outline: ${params.StoryArc}
-Story characters: ${params.Characters}
-Write the first page, only start the first section of the story outline...`,
+Story characters: ${params.Characters}`,
 });
 
 export default {

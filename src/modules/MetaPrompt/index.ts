@@ -12,7 +12,7 @@ export const defaultMetaPrompt: MetaPromptType = {
   content: "Default analysis",
   params: {},
   dynamics: [],
-  model: "gpt-4-0125-preview",
+  model: "nous-hermes-llama2-13b.Q4_0.gguf",
   run: async function (dynamic, previousResult = {}) {
     if (this.beforeExecute) await this.beforeExecute(dynamic.params, dynamic);
 
@@ -52,7 +52,7 @@ export function createMetaPrompt({
   content,
   params = {},
   dynamics = [],
-  model = "gpt-4-0125-preview",
+  model = "nous-hermes-llama2-13b.Q4_0.gguf",
   beforeExecute,
   afterExecute,
 }: {

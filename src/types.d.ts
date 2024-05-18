@@ -23,11 +23,11 @@ export interface MetaPromptType {
   afterExecute?: Hook;
 }
 
-export interface DynamicType {
+// Using discriminated union to handle different kinds of dynamics correctly
+export type BaseDynamicType = {
   name: string;
-  kind: DynamicTypeKind;
+  kind: DynamicTypeKind; // Make sure this uses the updated DynamicTypeKind
   metaPrompts: MetaPromptType[];
-  shouldContinue: Boolean;
   dynamics?: DynamicType[];
   processingTime?: number;
   run: (
@@ -37,4 +37,15 @@ export interface DynamicType {
   beforeExecute?: Hook;
   afterExecute?: Hook;
   params?: any;
-}
+};
+
+export type RecursiveDynamicType = BaseDynamicType & {
+  kind: "recursive";
+  shouldContinue: boolean;
+};
+
+export type NonRecursiveDynamicType = BaseDynamicType & {
+  kind: "chainOfThought" | "treeOfThought";
+};
+
+export type DynamicType = RecursiveDynamicType | NonRecursiveDynamicType;
