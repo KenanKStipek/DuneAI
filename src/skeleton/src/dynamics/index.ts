@@ -1,15 +1,33 @@
 import { createDynamic, COT, TOT } from "../../../";
-import { baseCreation, faceCreation, bodyCreation } from "../metaPrompts";
+import {
+  baseCreation,
+  faceCreation,
+  bodyCreation,
+  intimateCreation,
+  packBase,
+  packExtended,
+  packExtendedIntimate,
+  profileImagePromptCreation,
+  profileImageCreation,
+} from "../metaPrompts";
 
 export const extendedProfile = createDynamic({
-  name: "ExtendedCharacter",
+  name: "ExtendedAttributes",
   kind: TOT,
-  metaPrompts: [faceCreation, bodyCreation],
+  metaPrompts: [faceCreation, bodyCreation, intimateCreation],
 });
 
-//TODO///////
+export const image = createDynamic({
+  name: "ProfileImage",
+  kind: COT,
+  metaPrompts: [profileImagePromptCreation, profileImageCreation],
+});
 
-// NEED TO FIX HOW CREATED VALUES ARE NOT PASSING BETWEEN DYNAMICS AND METAPROMPTS <-----
+export const packageJSON = createDynamic({
+  name: "jsonData",
+  kind: TOT,
+  metaPrompts: [packBase, packExtended, packExtendedIntimate],
+});
 
 export const getPrimeDynamic = (params: any) =>
   createDynamic({
@@ -17,7 +35,7 @@ export const getPrimeDynamic = (params: any) =>
     kind: COT,
     params,
     metaPrompts: [baseCreation],
-    dynamics: [extendedProfile],
+    dynamics: [extendedProfile, image],
   });
 
 export async function runPrimeDynamic(params: {

@@ -11,7 +11,7 @@ export const faceCreation: MetaPromptType = createMetaPrompt({
 
     Create a detailed description of their face, we don't need to include their name as it is
     implied in context, use measurements in millimeters as applicable. Complete this form,
-    leave no blank, be succinct:
+    leave no blank, be succinct, only include keys and values, no introduction or duplicate context:
     Skin Texture:
     Skin Pore Size:
     Forehead Height:

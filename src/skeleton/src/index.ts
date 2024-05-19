@@ -6,5 +6,5 @@ import { runPrimeDynamic } from "./dynamics";
     characterCount: 5,
     totalPageLength: 3,
   });
-  console.log(result);
+  console.log(JSON.stringify(result, null, 2));
 })();

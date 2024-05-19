@@ -11,12 +11,11 @@ export const defaultMetaPrompt: MetaPromptType = {
   name: "defaultMetaPrompt",
   content: "Default analysis",
   params: {},
+  options: {},
   dynamics: [],
   model: "LLAMA3XXX",
   run: async function (dynamic, previousResult = {}) {
     if (this.beforeExecute) await this.beforeExecute(dynamic.params, dynamic);
-
-    console.log({ params: this.params });
 
     const contentToProcess =
       typeof this.content === "function"
@@ -32,9 +31,11 @@ export const defaultMetaPrompt: MetaPromptType = {
       contentToProcess,
     );
 
-    console.log(`Executing MetaPrompt: ${interpolatedContent}`);
+    console.log(`Executing MetaPrompt: ${this.name}`);
 
-    let aiResponse = (await ask(interpolatedContent, this.model)) as string;
+    let aiResponse = (await ask(interpolatedContent, this.model, {
+      options: this.options,
+    })) as string;
 
     if (this.afterExecute) await this.afterExecute(dynamic.params, dynamic);
 
@@ -49,6 +50,7 @@ export function createMetaPrompt({
   content,
   params = {},
   dynamics = [],
+  options = {},
   model = "LLAMA3XXX",
   beforeExecute,
   afterExecute,
@@ -56,6 +58,7 @@ export function createMetaPrompt({
   name: string;
   content: string | ContentFunction;
   params?: Record<string, any>;
+  options?: object;
   dynamics?: DynamicType[];
   model?: AIModel;
   beforeExecute?: Hook;
@@ -66,6 +69,7 @@ export function createMetaPrompt({
     name,
     content,
     params,
+    options,
     dynamics,
     model,
     beforeExecute,

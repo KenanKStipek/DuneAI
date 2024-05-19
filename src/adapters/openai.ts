@@ -13,7 +13,7 @@ const getCompletion = async (
   const params: OpenAI.Chat.ChatCompletionCreateParams = {
     messages: [{ role: "user", content }],
     model,
-    ...options,
+    // ...options,
   };
   // @ts-ignore
   const chatCompletion: OpenAI.Chat.ChatCompletion =

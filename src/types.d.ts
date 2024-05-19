@@ -8,10 +8,14 @@ export type Hook = (
 ) => void | Promise<void>;
 
 export type ContentFunction = (params: Record<string, any>) => string;
+export type OptionFunction = (
+  params: Record<string, any>,
+) => Record<string, any>;
 
 export interface MetaPromptType {
   name: string;
   content: string | ContentFunction;
+  options?: Record<string, any> | OptionFunction;
   dynamics: DynamicType[];
   model: AIModel;
   run: (

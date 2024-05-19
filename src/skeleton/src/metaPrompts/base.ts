@@ -16,7 +16,7 @@ export const baseCreation: MetaPromptType = createMetaPrompt({
     We are building for a western audience, so keep that in mind when creating the new profile.
 
     Fill out this form of attributes that are enternally consistent, if examples are
-    given in brackets, only select from those options, be succinct:
+    given in brackets, only select from those options, be succinct, only include keys and values, no introduction or duplicate context:
     Full Name:
     Apparent Age: [18-45]
     Sex: [Female]

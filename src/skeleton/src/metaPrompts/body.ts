@@ -3,7 +3,7 @@ import type { MetaPromptType } from "../../../types";
 
 export const bodyCreation: MetaPromptType = createMetaPrompt({
   name: "BodyAttributes",
-  model: "NOUS_HERMES",
+  model: "LLAMA3",
   content: (params) => `
   We are continuing a character profile creation. We have already defined this base information
   about them:
@@ -11,7 +11,7 @@ export const bodyCreation: MetaPromptType = createMetaPrompt({
 
   Create a detailed description of their body, we don't need to include their name as it is
   implied in context, use measurements in millimeters as applicable. Complete this form,
-  leave no blank, be succinct:
+  leave no blank, be succinct, only include keys and values, no introduction or duplicate context:
  	Neck Circumference:
 	Neck Length:
 	Neck Shape:
@@ -19,14 +19,6 @@ export const bodyCreation: MetaPromptType = createMetaPrompt({
 	Shoulder Height:
 	Shoulder Slope:
 	Chest Circumference:
-	Bust Circumference:
-	Bust Size:
-	Bust Shape:
-	Underbust Circumference:
-	Nipple Size:
-	Nipple Shape:
-	Areola Size:
-	Areola Shape:
 	Rib Cage Circumference:
 	Upper Back Width:
 	Upper Back Length:
@@ -68,23 +60,6 @@ export const bodyCreation: MetaPromptType = createMetaPrompt({
 	Foot Width:
 	Toe Length:
 	Toe Circumference:
-	Labia Majora Size:
-	Labia Minora Size:
-	Labia Shape:
-	Clitoral Size:
-	Clitoral Shape:
-	Vagina Depth:
-	Vagina Width:
-	Vagina Shape:
-	Vulva Symmetry:
-	Mons Pubis Size:
-	Pubic Hair Style:
-	Pubic Hair Density:
-	Perineum Size:
-	Anus Shape:
-	Anus Size:
-	Intimate Skin Texture:
-	Intimate Skin Tone:
   `,
   params: {
     BaseAttributes: "",
