@@ -1,7 +1,6 @@
 import OpenAI from "openai";
 import { OPENAI_API_KEY } from "../";
 import { throttledOperation } from "../utils/throttling";
-import { MODELS } from "./";
 
 export const openai = new OpenAI({
   apiKey: OPENAI_API_KEY,
@@ -9,12 +8,11 @@ export const openai = new OpenAI({
 
 const getCompletion = async (
   content: string,
-  { model, ...options } = { model: MODELS.GPT_FOUR },
+  { model, ...options } = { model: "GPT_FOUR" },
 ) => {
-  const selectedModel = model || MODELS.GPT_FOUR;
   const params: OpenAI.Chat.ChatCompletionCreateParams = {
     messages: [{ role: "user", content }],
-    model: selectedModel,
+    model,
     ...options,
   };
   // @ts-ignore

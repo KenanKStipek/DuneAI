@@ -12,9 +12,11 @@ export const defaultMetaPrompt: MetaPromptType = {
   content: "Default analysis",
   params: {},
   dynamics: [],
-  model: "nous-hermes-llama2-13b.Q4_0.gguf",
+  model: "LLAMA3XXX",
   run: async function (dynamic, previousResult = {}) {
     if (this.beforeExecute) await this.beforeExecute(dynamic.params, dynamic);
+
+    console.log({ params: this.params });
 
     const contentToProcess =
       typeof this.content === "function"
@@ -32,12 +34,7 @@ export const defaultMetaPrompt: MetaPromptType = {
 
     console.log(`Executing MetaPrompt: ${interpolatedContent}`);
 
-    let aiResponse = await ask(interpolatedContent, {
-      model: this.model,
-    }).catch((error) => {
-      console.error("Error during AI interaction:", error);
-      return "Error processing AI response";
-    });
+    let aiResponse = (await ask(interpolatedContent, this.model)) as string;
 
     if (this.afterExecute) await this.afterExecute(dynamic.params, dynamic);
 
@@ -52,7 +49,7 @@ export function createMetaPrompt({
   content,
   params = {},
   dynamics = [],
-  model = "nous-hermes-llama2-13b.Q4_0.gguf",
+  model = "LLAMA3XXX",
   beforeExecute,
   afterExecute,
 }: {

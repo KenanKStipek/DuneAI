@@ -1,11 +1,45 @@
-export { ask } from "./gpt4all";
+import * as gpt4all from "./gpt4all";
+import * as openai from "./openai";
+import * as sdwebui from "./sdwebui";
+
+export const ADAPTERS = {
+  GPT4ALL: gpt4all,
+  OPENAI: openai,
+  SDWEBUI: sdwebui,
+};
 
 export const MODELS = {
-  GPT_FOUR: "gpt-4-0125-preview",
-  GPT_FOUR_BIG: "gpt-4-32k",
-  GPT_THREE: "gpt-3.5-turbo",
-  MISTRAL_7B: "mistral-7b-openorca.gguf2.Q4_0.gguf",
-  ORCA_MINI_3B: "orca-mini-3b-gguf2-q4_0.gguf",
-  NOUS_HERMES: "nous-hermes-llama2-13b.Q4_0.gguf",
-  SD: "sd",
+  GPT_FOUR: { model: "gpt-4-0125-preview", adapter: "OPENAI" },
+  GPT_FOUR_BIG: { model: "gpt-4-32k", adapter: "OPENAI" },
+  GPT_THREE: { model: "gpt-3.5-turbo", adapter: "OPENAI" },
+  MISTRAL_7B: {
+    model: "mistral-7b-openorca.gguf2.Q4_0.gguf",
+    adapter: "GPT4ALL",
+  },
+  ORCA_MINI_3B: { model: "orca-mini-3b-gguf2-q4_0.gguf", adapter: "GPT4ALL" },
+  NOUS_HERMES: {
+    model: "nous-hermes-llama2-13b.Q4_0.gguf",
+    adapter: "GPT4ALL",
+  },
+  LLAMA3XXX: {
+    model: "LexiFun-Llama-3-8B-Uncensored-V1_F16.gguf",
+    adapter: "GPT4ALL",
+  },
+  LLAMA3: {
+    model: "Meta-Llama-3-8B-Instruct.Q4_0.gguf",
+    adapter: "GPT4ALL",
+  },
+  SD: { model: "sd", adapter: "SDWEBUI" },
 } as const;
+
+// Unified ask method that delegates to the correct adapter based on the modelKey
+export async function ask(
+  prompt: string,
+  modelKey: keyof typeof MODELS,
+  options?: any,
+) {
+  const adapterKey = MODELS[modelKey].adapter;
+  const model = MODELS[modelKey].model;
+  const adapter = ADAPTERS[adapterKey];
+  return adapter.ask(prompt, { model, ...options });
+}

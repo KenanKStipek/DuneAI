@@ -26,7 +26,7 @@ export const defaultDynamic: DynamicType = {
         result = await runChainOfThought(this, previousResult);
         break;
       case "treeOfThought":
-        result = await runTreeOfThought(this);
+        result = await runTreeOfThought(this, previousResult);
         break;
       default:
         console.error("Unknown dynamic type");
@@ -71,6 +71,8 @@ export function createDynamic(params: {
 async function runChainOfThought(dynamic: DynamicType, previousResult: any) {
   console.log("Running Chain of Thought Dynamic");
 
+  console.log({ previousResult });
+
   // Ensure dynamic.params is initialized correctly
   dynamic.params = { ...dynamic.params, ...previousResult };
 
@@ -84,6 +86,8 @@ async function runChainOfThought(dynamic: DynamicType, previousResult: any) {
       dynamic.params = { ...dynamic.params, ...output };
     }
   }
+
+  console.log({ params: dynamic.params });
 
   // Process sub-dynamics with updated params
   if (dynamic.dynamics) {
@@ -125,8 +129,10 @@ async function runRecursive(dynamic: DynamicType, previousResult: any) {
   return result;
 }
 
-async function runTreeOfThought(dynamic: DynamicType) {
+async function runTreeOfThought(dynamic: DynamicType, previousResult: any) {
   console.log("Running Tree of Thought Dynamic");
+
+  dynamic.params = { ...dynamic.params, ...previousResult };
 
   const results = await Promise.all(
     dynamic.metaPrompts.map((metaPrompt) =>

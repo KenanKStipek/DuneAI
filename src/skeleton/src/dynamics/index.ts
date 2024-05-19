@@ -1,17 +1,23 @@
-import { createDynamic, COT } from "../../../";
-import {
-  characterCreationPrompt,
-  enhancedStoryArcPrompt,
-} from "../metaPrompts";
-import { dynamicStoryWritingDynamic } from "./story";
+import { createDynamic, COT, TOT } from "../../../";
+import { baseCreation, faceCreation, bodyCreation } from "../metaPrompts";
+
+export const extendedProfile = createDynamic({
+  name: "ExtendedCharacter",
+  kind: TOT,
+  metaPrompts: [faceCreation, bodyCreation],
+});
+
+//TODO///////
+
+// NEED TO FIX HOW CREATED VALUES ARE NOT PASSING BETWEEN DYNAMICS AND METAPROMPTS <-----
 
 export const getPrimeDynamic = (params: any) =>
   createDynamic({
-    name: "Story",
+    name: "Character",
     kind: COT,
     params,
-    metaPrompts: [characterCreationPrompt, enhancedStoryArcPrompt],
-    dynamics: [dynamicStoryWritingDynamic],
+    metaPrompts: [baseCreation],
+    dynamics: [extendedProfile],
   });
 
 export async function runPrimeDynamic(params: {
@@ -19,7 +25,7 @@ export async function runPrimeDynamic(params: {
   characterCount?: number;
   totalPageLength?: number;
 }) {
-  console.log("Starting the story creation process...");
+  console.log("Starting the profile creation process...");
 
   const prime = getPrimeDynamic(params);
   return await prime.run(prime);
