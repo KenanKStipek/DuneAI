@@ -34,7 +34,7 @@ export const MODELS = {
 
 // Unified ask method that delegates to the correct adapter based on the modelKey
 export async function ask(
-  prompt: string,
+  prompt: string | Record<string, any>,
   modelKey: keyof typeof MODELS,
   options?: any,
 ) {

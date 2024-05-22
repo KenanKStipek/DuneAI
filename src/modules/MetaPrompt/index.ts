@@ -11,7 +11,6 @@ export const defaultMetaPrompt: MetaPromptType = {
   name: "defaultMetaPrompt",
   content: "Default analysis",
   params: {},
-  options: {},
   dynamics: [],
   model: "LLAMA3XXX",
   run: async function (dynamic, previousResult = {}) {
@@ -22,20 +21,26 @@ export const defaultMetaPrompt: MetaPromptType = {
         ? this.content(dynamic.params)
         : this.content;
 
-    const interpolatedContent = Object.keys(dynamic.params).reduce(
-      (acc, key) =>
-        acc.replace(
-          new RegExp(`{{${key}}}`, "g"),
-          dynamic.params[key] || previousResult[key],
-        ),
-      contentToProcess,
-    );
+    let interpolatedContent: string | Record<string, any> = "";
+
+    if (typeof contentToProcess === "string") {
+      interpolatedContent = Object.keys(dynamic.params).reduce(
+        (acc, key) =>
+          acc.replace(
+            new RegExp(`{{${key}}}`, "g"),
+            dynamic.params[key] || previousResult[key],
+          ),
+        contentToProcess,
+      );
+    } else {
+      interpolatedContent = contentToProcess;
+    }
+
+    // console.log({ request: interpolatedContent });
 
     console.log(`Executing MetaPrompt: ${this.name}`);
 
-    let aiResponse = (await ask(interpolatedContent, this.model, {
-      options: this.options,
-    })) as string;
+    let aiResponse = (await ask(interpolatedContent, this.model)) as string;
 
     if (this.afterExecute) await this.afterExecute(dynamic.params, dynamic);
 
@@ -50,7 +55,6 @@ export function createMetaPrompt({
   content,
   params = {},
   dynamics = [],
-  options = {},
   model = "LLAMA3XXX",
   beforeExecute,
   afterExecute,
@@ -58,7 +62,6 @@ export function createMetaPrompt({
   name: string;
   content: string | ContentFunction;
   params?: Record<string, any>;
-  options?: object;
   dynamics?: DynamicType[];
   model?: AIModel;
   beforeExecute?: Hook;
@@ -69,7 +72,6 @@ export function createMetaPrompt({
     name,
     content,
     params,
-    options,
     dynamics,
     model,
     beforeExecute,

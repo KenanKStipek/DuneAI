@@ -13,7 +13,7 @@ const getCompletion = async (
   const params: OpenAI.Chat.ChatCompletionCreateParams = {
     messages: [{ role: "user", content }],
     model,
-    // ...options,
+    ...options,
   };
   // @ts-ignore
   const chatCompletion: OpenAI.Chat.ChatCompletion =
@@ -21,8 +21,14 @@ const getCompletion = async (
   return chatCompletion.choices[0].message?.content;
 };
 
-export const ask = async (prompt: string, options?: any) => {
-  return (await throttledOperation(() => getCompletion(prompt, options), {
-    id: prompt,
-  })) as string;
+export const ask = async (
+  prompt: string | Record<string, any>,
+  options?: any,
+) => {
+  return (await throttledOperation(
+    () => getCompletion(prompt as string, options),
+    {
+      id: prompt,
+    },
+  )) as string;
 };

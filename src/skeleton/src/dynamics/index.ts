@@ -3,9 +3,14 @@ import {
   baseCreation,
   faceCreation,
   bodyCreation,
+  hairCreation,
+  eyesCreation,
   intimateCreation,
   packBase,
-  packExtended,
+  packExtendedBody,
+  packExtendedHair,
+  packExtendedFace,
+  packExtendedEyes,
   packExtendedIntimate,
   profileImagePromptCreation,
   profileImageCreation,
@@ -14,7 +19,13 @@ import {
 export const extendedProfile = createDynamic({
   name: "ExtendedAttributes",
   kind: TOT,
-  metaPrompts: [faceCreation, bodyCreation, intimateCreation],
+  metaPrompts: [
+    faceCreation,
+    eyesCreation,
+    hairCreation,
+    bodyCreation,
+    intimateCreation,
+  ],
 });
 
 export const image = createDynamic({
@@ -26,7 +37,14 @@ export const image = createDynamic({
 export const packageJSON = createDynamic({
   name: "jsonData",
   kind: TOT,
-  metaPrompts: [packBase, packExtended, packExtendedIntimate],
+  metaPrompts: [
+    packBase,
+    packExtendedBody,
+    packExtendedHair,
+    packExtendedFace,
+    packExtendedEyes,
+    packExtendedIntimate,
+  ],
 });
 
 export const getPrimeDynamic = (params: any) =>
@@ -35,7 +53,7 @@ export const getPrimeDynamic = (params: any) =>
     kind: COT,
     params,
     metaPrompts: [baseCreation],
-    dynamics: [extendedProfile, image],
+    dynamics: [extendedProfile, image, packageJSON],
   });
 
 export async function runPrimeDynamic(params: {

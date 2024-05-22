@@ -46,12 +46,15 @@ const getCompletion = async (content: string, options: CompletionOptions) => {
 };
 
 export const ask = async (
-  prompt: string,
+  prompt: string | Record<string, any>,
   options: CompletionOptions,
 ): Promise<string> => {
-  return (await throttledOperation(() => getCompletion(prompt, options), {
-    id: prompt,
-  })) as string;
+  return (await throttledOperation(
+    () => getCompletion(prompt as string, options),
+    {
+      id: prompt,
+    },
+  )) as string;
 };
 
 export const disposeModel = (model: ModelType, name: string): void => {

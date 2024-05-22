@@ -21,6 +21,8 @@
     "setup": "ts-node scripts/setup.ts"
   },
   "dependencies": {
+    "@xata.io/client": "^0.29.4",
+    "axios": "^1.7.2",
     "bottleneck": "^2.19.5",
     "gpt4all": "^4.0.0",
     "node-sd-webui": "^0.0.8",
