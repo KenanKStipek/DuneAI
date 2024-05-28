@@ -16,8 +16,18 @@ const generateImage = async (prompt: string, options: any = {}) => {
   }
 };
 
-export const ask = async (prompt: string, options?: any) => {
-  return await throttledOperation(() => generateImage(prompt, options), {
-    id: prompt, // Use prompt as the unique identifier for throttling purposes
-  });
+export const ask = async (
+  prompt: string | Record<string, any>,
+  options?: any,
+) => {
+  if (typeof prompt === "object") {
+    options = prompt;
+    prompt = options.prompt;
+  }
+  return await throttledOperation(
+    () => generateImage(prompt as string, options),
+    {
+      id: prompt, // Use prompt as the unique identifier for throttling purposes
+    },
+  );
 };

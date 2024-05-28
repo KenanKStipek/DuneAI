@@ -16,7 +16,7 @@ export const defaultDynamic: DynamicType = {
     if (this.beforeExecute) await this.beforeExecute(this.params);
     console.log(`Starting Dynamic: ${this.kind}`);
 
-    let result: any = this.params; // Initialize result with incoming params
+    let result: any = this.params;
     switch (this.kind) {
       //@ts-ignore
       case "recursive":
@@ -26,7 +26,7 @@ export const defaultDynamic: DynamicType = {
         result = await runChainOfThought(this, previousResult);
         break;
       case "treeOfThought":
-        result = await runTreeOfThought(this);
+        result = await runTreeOfThought(this, previousResult);
         break;
       default:
         console.error("Unknown dynamic type");
@@ -69,7 +69,7 @@ export function createDynamic(params: {
 }
 
 async function runChainOfThought(dynamic: DynamicType, previousResult: any) {
-  console.log("Running Chain of Thought Dynamic");
+  console.log(`Running ${dynamic.name} Dynamic`);
 
   // Ensure dynamic.params is initialized correctly
   dynamic.params = { ...dynamic.params, ...previousResult };
@@ -100,7 +100,7 @@ async function runChainOfThought(dynamic: DynamicType, previousResult: any) {
 }
 
 async function runRecursive(dynamic: DynamicType, previousResult: any) {
-  console.log("Running Recursive Dynamic");
+  console.log(`Running ${dynamic.name} Dynamic`);
 
   if (dynamic.kind !== "recursive") {
     throw new Error("runRecursive called on a non-recursive dynamic");
@@ -125,8 +125,10 @@ async function runRecursive(dynamic: DynamicType, previousResult: any) {
   return result;
 }
 
-async function runTreeOfThought(dynamic: DynamicType) {
-  console.log("Running Tree of Thought Dynamic");
+async function runTreeOfThought(dynamic: DynamicType, previousResult: any) {
+  console.log(`Running ${dynamic.name} Dynamic`);
+
+  dynamic.params = { ...dynamic.params, ...previousResult };
 
   const results = await Promise.all(
     dynamic.metaPrompts.map((metaPrompt) =>

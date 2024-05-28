@@ -12,7 +12,7 @@ export const defaultMetaPrompt: MetaPromptType = {
   content: "Default analysis",
   params: {},
   dynamics: [],
-  model: "nous-hermes-llama2-13b.Q4_0.gguf",
+  model: "LLAMA3XXX",
   run: async function (dynamic, previousResult = {}) {
     if (this.beforeExecute) await this.beforeExecute(dynamic.params, dynamic);
 
@@ -21,23 +21,26 @@ export const defaultMetaPrompt: MetaPromptType = {
         ? this.content(dynamic.params)
         : this.content;
 
-    const interpolatedContent = Object.keys(dynamic.params).reduce(
-      (acc, key) =>
-        acc.replace(
-          new RegExp(`{{${key}}}`, "g"),
-          dynamic.params[key] || previousResult[key],
-        ),
-      contentToProcess,
-    );
+    let interpolatedContent: string | Record<string, any> = "";
 
-    console.log(`Executing MetaPrompt: ${interpolatedContent}`);
+    if (typeof contentToProcess === "string") {
+      interpolatedContent = Object.keys(dynamic.params).reduce(
+        (acc, key) =>
+          acc.replace(
+            new RegExp(`{{${key}}}`, "g"),
+            dynamic.params[key] || previousResult[key],
+          ),
+        contentToProcess,
+      );
+    } else {
+      interpolatedContent = contentToProcess;
+    }
 
-    let aiResponse = await ask(interpolatedContent, {
-      model: this.model,
-    }).catch((error) => {
-      console.error("Error during AI interaction:", error);
-      return "Error processing AI response";
-    });
+    // console.log({ request: interpolatedContent });
+
+    console.log(`Executing MetaPrompt: ${this.name}`);
+
+    let aiResponse = (await ask(interpolatedContent, this.model)) as string;
 
     if (this.afterExecute) await this.afterExecute(dynamic.params, dynamic);
 
@@ -52,7 +55,7 @@ export function createMetaPrompt({
   content,
   params = {},
   dynamics = [],
-  model = "nous-hermes-llama2-13b.Q4_0.gguf",
+  model = "LLAMA3XXX",
   beforeExecute,
   afterExecute,
 }: {

@@ -7,7 +7,9 @@ export type Hook = (
   dynamic?: DynamicType,
 ) => void | Promise<void>;
 
-export type ContentFunction = (params: Record<string, any>) => string;
+export type ContentFunction = (
+  params: Record<string, any>,
+) => string | Record<string, any>;
 
 export interface MetaPromptType {
   name: string;

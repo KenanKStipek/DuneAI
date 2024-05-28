@@ -13,21 +13,18 @@ interface CompletionOptions {
 // Placeholder for model type (could be more specific based on the library)
 type ModelType = any;
 
-let model: ModelType | null = null; // Holds the model instance
-
 // Load or get the already loaded model
 async function getModel(
   modelPath: string,
   device: string = "cpu",
 ): Promise<ModelType> {
-  if (!model) {
-    try {
-      model = await gpt.loadModel(modelPath, { verbose: true, device });
-      console.log("Model loaded successfully:", modelPath);
-    } catch (error) {
-      console.error("Failed to load model:", error);
-      throw error;
-    }
+  let model: ModelType | null = null;
+  try {
+    model = await gpt.loadModel(modelPath, { device });
+    console.log("Model loaded successfully:", modelPath);
+  } catch (error) {
+    console.error("Failed to load model:", error);
+    throw error;
   }
   return model;
 }
@@ -39,26 +36,30 @@ const getCompletion = async (content: string, options: CompletionOptions) => {
   const chat = await modelInstance.createChatSession();
   try {
     const completion = await gpt.createCompletion(chat, content, options);
+    disposeModel(modelInstance, modelPath);
     return completion.choices[0].message.content;
   } catch (error) {
     console.error("Error during completion:", error);
+    disposeModel(modelInstance, modelPath);
     throw error;
   }
 };
 
 export const ask = async (
-  prompt: string,
+  prompt: string | Record<string, any>,
   options: CompletionOptions,
 ): Promise<string> => {
-  return (await throttledOperation(() => getCompletion(prompt, options), {
-    id: prompt,
-  })) as string;
+  return (await throttledOperation(
+    () => getCompletion(prompt as string, options),
+    {
+      id: prompt,
+    },
+  )) as string;
 };
 
-export const disposeModel = (): void => {
+export const disposeModel = (model: ModelType, name: string): void => {
   if (model) {
     model.dispose();
-    console.log("Model disposed");
-    model = null; // Ensure the reference is cleared
+    console.log(`Model instance for ${name} disposed`);
   }
 };
