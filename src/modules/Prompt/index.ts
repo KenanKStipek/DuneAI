@@ -1,68 +1,59 @@
 import Mustache from "mustache";
-import {
-  MetaPromptType,
-  AIModel,
-  DynamicType,
-  Hook,
-  ContentFunction,
-} from "../../types";
+import { PromptType, AIModel, Hook, PromptObject } from "../../types";
 import { ask } from "../../adapters";
 
-export const defaultPrompt: MetaPromptType = {
+export const defaultPrompt: PromptType = {
   name: "defaultPrompt",
   content: "Default analysis",
-  params: {},
-  dynamics: [],
+  context: {},
   model: "LLAMA3",
   run: async function (dynamic, previousResult = {}) {
-    if (this.beforeExecute) await this.beforeExecute(dynamic.params, dynamic);
+    if (this.beforeLife) await this.beforeLife(dynamic.context, dynamic);
 
     const data = {
-      ...dynamic.params,
+      ...dynamic.context,
       ...previousResult,
     };
 
     const interpolatedContent = Mustache.render(this.content as string, data);
 
-    console.log({ interpolatedContent });
-
     console.log(`Executing Prompt: ${this.name}`);
+
+    // console.log({ context: this.context });
 
     let aiResponse = (await ask(interpolatedContent, this.model)) as string;
 
-    if (this.afterExecute) await this.afterExecute(dynamic.params, dynamic);
+    if (this.afterDeath) await this.afterDeath(dynamic.context, dynamic);
 
     return { [this.name]: aiResponse };
   },
-  beforeExecute: () => console.log("Preparing meta-prompt..."),
-  afterExecute: () => console.log("Meta-prompt completed."),
+  beforeLife: () => console.log("Preparing Prompt..."),
+  afterDeath: () => console.log("Prompt completed."),
 };
 
 export function createPrompt({
   name,
   content,
-  params = {},
-  dynamics = [],
+  context = {},
   model = "LLAMA3",
-  beforeExecute,
-  afterExecute,
+  beforeLife,
+  afterDeath,
 }: {
   name: string;
-  content: string | ContentFunction;
+  content: string | PromptObject;
+  context: object;
   params?: Record<string, any>;
-  dynamics?: DynamicType[];
   model?: AIModel;
-  beforeExecute?: Hook;
-  afterExecute?: Hook;
-}): MetaPromptType {
+  beforeLife?: Hook;
+  afterDeath?: Hook;
+}): PromptType {
   return {
     ...defaultPrompt,
     name,
     content,
-    params,
-    dynamics,
+    context,
     model,
-    beforeExecute,
-    afterExecute,
+    beforeLife,
+    afterDeath,
   };
 }

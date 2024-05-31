@@ -1,53 +1,47 @@
 export type AIModel = (typeof MODELS)[keyof typeof MODELS];
 
-export type DynamicTypeKind = "recursive" | "chainOfThought" | "treeOfThought";
+export type DynamicTypeKind = "chainOfThought" | "treeOfThought";
 
 export type Hook = (
-  params?: any,
+  context?: any,
   dynamic?: DynamicType,
 ) => void | Promise<void>;
 
-export type ContentFunction = (
-  params: Record<string, any>,
-) => string | Record<string, any>;
-
-export interface MetaPromptType {
+type PromptObject = {
   name: string;
-  content: string | ContentFunction;
-  dynamics: DynamicType[];
+  content: string | PromptObject;
   model: AIModel;
   run: (
     dynamic: DynamicType,
     input?: any,
-  ) => Promise<string | Record<string, string>>;
-  params?: Record<string, any>;
-  beforeExecute?: Hook;
-  afterExecute?: Hook;
+  ) => Promise<string | Record<string, any>>;
+  context?: Record<string, any>;
+  beforeLife?: Hook;
+  afterDeath?: Hook;
+};
+
+type PromptInstruction = {
+  [key: string]: string;
+};
+
+export interface PromptType extends PromptObject {
+  content: string | PromptObject;
 }
 
-// Using discriminated union to handle different kinds of dynamics correctly
 export type BaseDynamicType = {
   name: string;
-  kind: DynamicTypeKind; // Make sure this uses the updated DynamicTypeKind
-  metaPrompts: MetaPromptType[];
+  kind: DynamicTypeKind;
+  prompts: PromptInstruction[];
   dynamics?: DynamicType[];
-  processingTime?: number;
+  context?: any;
   run: (
     dynamic: DynamicType,
     input?: any,
   ) => Promise<string | Record<string, string>>;
-  beforeExecute?: Hook;
-  afterExecute?: Hook;
-  params?: any;
+  beforeLife?: Hook;
+  afterDeath?: Hook;
 };
 
-export type RecursiveDynamicType = BaseDynamicType & {
-  kind: "recursive";
-  shouldContinue: boolean;
-};
-
-export type NonRecursiveDynamicType = BaseDynamicType & {
+export type DynamicType = BaseDynamicType & {
   kind: "chainOfThought" | "treeOfThought";
 };
-
-export type DynamicType = RecursiveDynamicType | NonRecursiveDynamicType;

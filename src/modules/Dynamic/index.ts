@@ -1,22 +1,23 @@
 import {
   DynamicType,
   DynamicTypeKind,
-  MetaPromptType,
+  PromptType,
   Hook,
+  PromptInstruction,
 } from "../../types";
 import { createPrompt } from "../Prompt";
 
 export const defaultDynamic: DynamicType = {
-  name: "",
+  name: "defaultDynamic",
   kind: "chainOfThought",
-  // @ts-ignore
   prompts: [],
   dynamics: [],
+  context: {},
   run: async function (this, previousResult) {
-    if (this.beforeExecute) await this.beforeExecute(this.params);
+    if (this.beforeLife) await this.beforeLife(this.context);
     console.log(`Starting Dynamic: ${this.kind}`);
 
-    let result: any = this.params;
+    let result: any = this.context;
     switch (this.kind) {
       case "chainOfThought":
         result = await runChainOfThought(this, previousResult);
@@ -29,53 +30,58 @@ export const defaultDynamic: DynamicType = {
         return {};
     }
 
-    if (this.afterExecute) await this.afterExecute(result);
+    if (this.afterDeath) await this.afterDeath(result);
     return { [this.name]: result };
   },
-  beforeExecute: () => console.log("Preparing dynamic..."),
-  afterExecute: () => console.log("Dynamic completed."),
+  beforeLife: () => console.log("Preparing dynamic..."),
+  afterDeath: () => console.log("Dynamic completed."),
 };
-
-export function createDynamic(params: {
+export function createDynamic(context: {
   name: string;
   kind: DynamicTypeKind;
-  prompts: MetaPromptType[];
-  beforeExecute?: Hook;
-  afterExecute?: Hook;
+  prompts: (PromptType | PromptInstruction)[];
+  beforeLife?: Hook;
+  afterDeath?: Hook;
   params?: any;
   dynamics?: DynamicType[];
-}): DynamicType {
-  // @ts-ignore
+  context?: object;
+}): any {
   return {
     ...defaultDynamic,
-    ...params,
+    ...context,
   };
 }
 
 async function runChainOfThought(dynamic: DynamicType, previousResult: any) {
   console.log(`Running ${dynamic.name} Dynamic`);
 
-  dynamic.params = { ...dynamic.params, ...previousResult };
+  dynamic.context = { ...dynamic.context, ...previousResult.context };
+
+  console.log("runChainOfThought");
+  console.log({ context: dynamic.context });
 
   let result = {};
 
-  // @ts-ignore
   for (const prompt of dynamic.prompts) {
     const name = Object.keys(prompt)[0];
     const content = Object.values(prompt)[0];
-    const newPrompt = createPrompt({ name, content: content as string });
-    const output = await newPrompt.run(dynamic, dynamic.params);
+    const newPrompt = createPrompt({
+      name,
+      content: content as string,
+      context: dynamic.context,
+    });
+    const output = await newPrompt.run(dynamic, dynamic.context);
     if (typeof output === "object" && output !== null) {
       result = { ...result, ...output };
-      dynamic.params = { ...dynamic.params, ...output };
+      dynamic.context = { ...dynamic.context, ...output };
     }
   }
 
   for (const subDynamic of dynamic.dynamics || []) {
-    const output = await subDynamic.run(dynamic.params);
+    const output = await subDynamic.run(dynamic.context);
     if (typeof output === "object" && output !== null) {
       result = { ...result, ...output };
-      dynamic.params = { ...dynamic.params, ...output };
+      dynamic.context = { ...dynamic.context, ...output };
     }
   }
 
@@ -85,33 +91,32 @@ async function runChainOfThought(dynamic: DynamicType, previousResult: any) {
 async function runTreeOfThought(dynamic: DynamicType, previousResult: any) {
   console.log(`Running ${dynamic.name} Tree of Thought Dynamic`);
 
-  dynamic.params = { ...dynamic.params, ...previousResult };
+  dynamic.context = { ...dynamic.context, ...previousResult };
 
   // Process all prompts first and update results and params
   const promptResults = await Promise.all(
-    // @ts-ignore
     dynamic.prompts.map((prompt) => {
       const name = Object.keys(prompt)[0];
       const content = Object.values(prompt)[0];
-      return createPrompt({ name, content: content as string }).run(
-        dynamic,
-        dynamic.params,
-      );
+      return createPrompt({
+        name,
+        content: content as string,
+        context: dynamic.context,
+      }).run(dynamic, dynamic.context);
     }),
   );
 
   // Update params with results from prompts
-  // @ts-ignore
   promptResults.forEach((result) => {
     if (typeof result === "object" && result !== null) {
-      dynamic.params = { ...dynamic.params, ...result };
+      dynamic.context = { ...dynamic.context, ...result };
     }
   });
 
   // Process all dynamics with updated params
   const dynamicResults = await Promise.all(
     // @ts-ignore
-    dynamic.dynamics.map((subDynamic) => subDynamic.run(dynamic.params)),
+    dynamic.dynamics.map((subDynamic) => subDynamic.run(dynamic.context)),
   );
 
   // Combine results from both prompts and dynamics

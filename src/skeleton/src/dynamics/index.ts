@@ -1,19 +1,18 @@
 import { createDynamic, COT, importPrompts } from "../../../";
-import { dynamicStoryWritingDynamic } from "./story";
+import { storyWriterDynamic } from "./storyWriter";
 
 const { Character, StoryArc } = importPrompts([
   "src/skeleton/src/prompts/Character.prompt",
   "src/skeleton/src/prompts/StoryArc.prompt",
 ]);
 
-export const getPrimeDynamic = (params: any) =>
+export const getPrimeDynamic = (context: any) =>
   createDynamic({
     name: "Story",
     kind: COT,
-    params,
-    // @ts-ignore
+    context,
     prompts: [{ Character }, { StoryArc }],
-    dynamics: [dynamicStoryWritingDynamic],
+    dynamics: [storyWriterDynamic],
   });
 
 export async function runPrimeDynamic(params: {
