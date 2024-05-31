@@ -1,3 +1,4 @@
+import Mustache from "mustache";
 import {
   MetaPromptType,
   AIModel,
@@ -7,38 +8,25 @@ import {
 } from "../../types";
 import { ask } from "../../adapters";
 
-export const defaultMetaPrompt: MetaPromptType = {
-  name: "defaultMetaPrompt",
+export const defaultPrompt: MetaPromptType = {
+  name: "defaultPrompt",
   content: "Default analysis",
   params: {},
   dynamics: [],
-  model: "LLAMA3XXX",
+  model: "LLAMA3",
   run: async function (dynamic, previousResult = {}) {
     if (this.beforeExecute) await this.beforeExecute(dynamic.params, dynamic);
 
-    const contentToProcess =
-      typeof this.content === "function"
-        ? this.content(dynamic.params)
-        : this.content;
+    const data = {
+      ...dynamic.params,
+      ...previousResult,
+    };
 
-    let interpolatedContent: string | Record<string, any> = "";
+    const interpolatedContent = Mustache.render(this.content as string, data);
 
-    if (typeof contentToProcess === "string") {
-      interpolatedContent = Object.keys(dynamic.params).reduce(
-        (acc, key) =>
-          acc.replace(
-            new RegExp(`{{${key}}}`, "g"),
-            dynamic.params[key] || previousResult[key],
-          ),
-        contentToProcess,
-      );
-    } else {
-      interpolatedContent = contentToProcess;
-    }
+    console.log({ interpolatedContent });
 
-    // console.log({ request: interpolatedContent });
-
-    console.log(`Executing MetaPrompt: ${this.name}`);
+    console.log(`Executing Prompt: ${this.name}`);
 
     let aiResponse = (await ask(interpolatedContent, this.model)) as string;
 
@@ -50,12 +38,12 @@ export const defaultMetaPrompt: MetaPromptType = {
   afterExecute: () => console.log("Meta-prompt completed."),
 };
 
-export function createMetaPrompt({
+export function createPrompt({
   name,
   content,
   params = {},
   dynamics = [],
-  model = "LLAMA3XXX",
+  model = "LLAMA3",
   beforeExecute,
   afterExecute,
 }: {
@@ -68,7 +56,7 @@ export function createMetaPrompt({
   afterExecute?: Hook;
 }): MetaPromptType {
   return {
-    ...defaultMetaPrompt,
+    ...defaultPrompt,
     name,
     content,
     params,

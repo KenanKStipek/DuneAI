@@ -1,0 +1,3 @@
+You are writing a story, here is the information for the story, keep it less than 2000 tokens:
+Characters: {{ Characters }}
+Story outline: {{ StoryArc }}

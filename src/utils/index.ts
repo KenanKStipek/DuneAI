@@ -1,3 +1,6 @@
+import path from "path";
+import fs from "fs";
+
 export const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export const retryOperation = (
@@ -24,4 +27,27 @@ export const shuffle = (array: string[][]) => {
     .map((value) => ({ value, sort: Math.random() }))
     .sort((a, b) => a.sort - b.sort)
     .map(({ value }) => value);
+};
+
+const importPrompt = (filePath: string): string => {
+  const absolutePath = path.resolve(process.cwd(), filePath);
+  return fs.readFileSync(absolutePath, "utf8");
+};
+
+export const importPrompts = (
+  filePaths: string | string[],
+): Record<string, string> => {
+  const prompts: Record<string, string> = {};
+
+  if (typeof filePaths === "string") {
+    const fileName = path.basename(filePaths, path.extname(filePaths));
+    prompts[fileName] = importPrompt(filePaths);
+  } else {
+    filePaths.forEach((filePath) => {
+      const fileName = path.basename(filePath, path.extname(filePath));
+      prompts[fileName] = importPrompt(filePath);
+    });
+  }
+
+  return prompts;
 };

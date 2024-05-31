@@ -1,13 +1,11 @@
-import { createDynamic, COT } from "../../../";
+import { createDynamic, COT, importPrompts } from "../../../";
 import { DynamicType } from "../../../types";
-import { dynamicStoryWritingPrompt } from "../metaPrompts";
+
+const { Story } = importPrompts(["src/skeleton/src/prompts/Story.prompt"]);
 
 export const dynamicStoryWritingDynamic: DynamicType = createDynamic({
   name: "Story",
   kind: COT,
-  metaPrompts: [
-    dynamicStoryWritingPrompt,
-    dynamicStoryWritingPrompt,
-    dynamicStoryWritingPrompt,
-  ],
+  // @ts-ignore
+  prompts: [{ Story }],
 });
