@@ -1,27 +1,28 @@
+import type { State } from "zustand/vanilla";
+import { MODELS } from "../adapters";
+
 export type AIModel = (typeof MODELS)[keyof typeof MODELS];
 
 export type DynamicTypeKind = "chainOfThought" | "treeOfThought";
 
-export type Hook = (
-  context?: any,
-  dynamic?: DynamicType,
-) => void | Promise<void>;
+export type Hook = (state: State) => void | Promise<void>;
 
-type PromptObject = {
+export type PromptObject = {
   name: string;
   content: string | PromptObject;
   model: AIModel;
-  run: (
-    dynamic: DynamicType,
-    input?: any,
-  ) => Promise<string | Record<string, any>>;
+  run: (dynamic: DynamicType) => Promise<Record<string, any>>;
   context?: Record<string, any>;
   beforeLife?: Hook;
   afterDeath?: Hook;
 };
 
-type PromptInstruction = {
+export type PromptInstruction = {
   [key: string]: string;
+};
+
+export type DynamicInstruction = {
+  [key: string]: DynamicType;
 };
 
 export interface PromptType extends PromptObject {
@@ -31,13 +32,10 @@ export interface PromptType extends PromptObject {
 export type BaseDynamicType = {
   name: string;
   kind: DynamicTypeKind;
-  prompts: PromptInstruction[];
-  dynamics?: DynamicType[];
+  prompts: (PromptType | PromptInstruction)[];
+  dynamics?: (DynamicType | DynamicInstruction)[];
   context?: any;
-  run: (
-    dynamic: DynamicType,
-    input?: any,
-  ) => Promise<string | Record<string, string>>;
+  run: () => Promise<Record<string, any>>;
   beforeLife?: Hook;
   afterDeath?: Hook;
 };

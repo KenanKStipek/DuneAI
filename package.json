@@ -26,6 +26,7 @@
     "gpt4all": "^4.0.0",
     "mustache": "^4.2.0",
     "node-sd-webui": "^0.0.8",
-    "openai": "^4.38.5"
+    "openai": "^4.38.5",
+    "zustand": "^4.5.2"
   }
 }

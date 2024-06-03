@@ -1,125 +1,71 @@
-import {
-  DynamicType,
-  DynamicTypeKind,
-  PromptType,
-  Hook,
-  PromptInstruction,
-} from "../../types";
-import { createPrompt } from "../Prompt";
+import { PromptType, DynamicType, Hook, DynamicTypeKind } from "../../types";
+import Prompt from "../Prompt";
+import { useStore } from "../../store";
 
-export const defaultDynamic: DynamicType = {
-  name: "defaultDynamic",
-  kind: "chainOfThought",
-  prompts: [],
-  dynamics: [],
-  context: {},
-  run: async function (this, previousResult) {
-    if (this.beforeLife) await this.beforeLife(this.context);
-    console.log(`Starting Dynamic: ${this.kind}`);
-
-    let result: any = this.context;
-    switch (this.kind) {
-      case "chainOfThought":
-        result = await runChainOfThought(this, previousResult);
-        break;
-      case "treeOfThought":
-        result = await runTreeOfThought(this, previousResult);
-        break;
-      default:
-        console.error("Unknown dynamic type");
-        return {};
-    }
-
-    if (this.afterDeath) await this.afterDeath(result);
-    return { [this.name]: result };
-  },
-  beforeLife: () => console.log("Preparing dynamic..."),
-  afterDeath: () => console.log("Dynamic completed."),
+const beforeLife: Hook = async (context) => {
+  // console.log(`beforeLife: ${JSON.stringify(context)}`);
 };
-export function createDynamic(context: {
-  name: string;
-  kind: DynamicTypeKind;
-  prompts: (PromptType | PromptInstruction)[];
-  beforeLife?: Hook;
-  afterDeath?: Hook;
-  params?: any;
-  dynamics?: DynamicType[];
-  context?: object;
-}): any {
-  return {
-    ...defaultDynamic,
-    ...context,
-  };
-}
 
-async function runChainOfThought(dynamic: DynamicType, previousResult: any) {
+const afterDeath: Hook = async (context) => {
+  // console.log(`afterDeath: ${JSON.stringify(context)}`);
+};
+
+const runChainOfThought = async (dynamic: DynamicType) => {
   console.log(`Running ${dynamic.name} Dynamic`);
-
-  dynamic.context = { ...dynamic.context, ...previousResult.context };
-
-  console.log("runChainOfThought");
-  console.log({ context: dynamic.context });
-
-  let result = {};
+  const { getState } = useStore;
+  const { setResponse } = getState();
+  let result = { ...getState().data[dynamic.name] };
 
   for (const prompt of dynamic.prompts) {
-    const name = Object.keys(prompt)[0];
-    const content = Object.values(prompt)[0];
-    const newPrompt = createPrompt({
-      name,
-      content: content as string,
-      context: dynamic.context,
-    });
-    const output = await newPrompt.run(dynamic, dynamic.context);
+    const newPrompt = Prompt().create(prompt);
+    const output = await newPrompt.run(dynamic);
     if (typeof output === "object" && output !== null) {
       result = { ...result, ...output };
-      dynamic.context = { ...dynamic.context, ...output };
+      setResponse(dynamic.name, newPrompt.name, output[newPrompt.name]);
     }
   }
 
   for (const subDynamic of dynamic.dynamics || []) {
-    const output = await subDynamic.run(dynamic.context);
+    const newSubDynamic = Dynamic().create(subDynamic as DynamicType);
+    const output = await newSubDynamic.run(dynamic);
     if (typeof output === "object" && output !== null) {
       result = { ...result, ...output };
-      dynamic.context = { ...dynamic.context, ...output };
+      setResponse(dynamic.name, newSubDynamic.name, output[newSubDynamic.name]);
     }
   }
 
   return result;
-}
+};
 
-async function runTreeOfThought(dynamic: DynamicType, previousResult: any) {
+const runTreeOfThought = async (dynamic: DynamicType) => {
   console.log(`Running ${dynamic.name} Tree of Thought Dynamic`);
+  const { getState } = useStore;
+  const { setResponse } = getState();
+  let result = { ...getState().data[dynamic.name] };
 
-  dynamic.context = { ...dynamic.context, ...previousResult };
-
-  // Process all prompts first and update results and params
   const promptResults = await Promise.all(
     dynamic.prompts.map((prompt) => {
-      const name = Object.keys(prompt)[0];
-      const content = Object.values(prompt)[0];
-      return createPrompt({
-        name,
-        content: content as string,
-        context: dynamic.context,
-      }).run(dynamic, dynamic.context);
+      const newPrompt = Prompt().create(prompt);
+      return newPrompt.run(dynamic);
     }),
   );
 
-  // Update params with results from prompts
-  promptResults.forEach((result) => {
-    if (typeof result === "object" && result !== null) {
-      dynamic.context = { ...dynamic.context, ...result };
+  promptResults.forEach((output) => {
+    if (typeof output === "object" && output !== null) {
+      const name = Object.keys(output)[0];
+      result = { ...result, ...output };
+      setResponse(dynamic.name, name, output[name]);
     }
   });
 
-  // Process all dynamics with updated params
   const dynamicResults = await Promise.all(
-    // @ts-ignore
-    dynamic.dynamics.map((subDynamic) => subDynamic.run(dynamic.context)),
+    dynamic.dynamics?.map(async (subDynamic) => {
+      const newSubDynamic = Dynamic().create(subDynamic as DynamicType);
+      const output = await newSubDynamic.run(dynamic);
+      return output;
+    }) || [],
   );
 
-  // Combine results from both prompts and dynamics
   const combinedResults: Record<string, string> = {};
   [...promptResults, ...dynamicResults].forEach((result) => {
     if (typeof result === "string") {
@@ -127,8 +73,107 @@ async function runTreeOfThought(dynamic: DynamicType, previousResult: any) {
         (combinedResults["combinedString"] || "") + result;
     } else if (typeof result === "object" && result !== null) {
       Object.assign(combinedResults, result);
+      const name = Object.keys(result)[0];
+      setResponse(dynamic.name, name, result[name]);
     }
   });
 
   return combinedResults;
+};
+
+const run = async (dynamic: DynamicType) => {
+  const { getState } = useStore;
+  const { setResponse } = getState();
+
+  if (dynamic.beforeLife) {
+    const beforeLifeResult = await dynamic.beforeLife(
+      getState().data[dynamic.name],
+    );
+    // @ts-ignore
+    if (beforeLifeResult) {
+      setResponse(dynamic.name, "beforeLife", beforeLifeResult);
+    }
+  }
+
+  console.log(`Starting Dynamic: ${dynamic.kind}`);
+
+  let result: any;
+  switch (dynamic.kind) {
+    case "chainOfThought":
+      result = await runChainOfThought(dynamic);
+      break;
+    case "treeOfThought":
+      result = await runTreeOfThought(dynamic);
+      break;
+    default:
+      console.error("Unknown dynamic type");
+      return {};
+  }
+
+  if (dynamic.afterDeath) {
+    const afterDeathResult = await dynamic.afterDeath(result);
+    // @ts-ignore
+    if (afterDeathResult) {
+      setResponse(dynamic.name, "afterDeath", afterDeathResult);
+    }
+  }
+
+  setResponse(dynamic.name, "context", result);
+  return { [dynamic.name]: result };
+};
+
+export default function Dynamic() {
+  return {
+    // @ts-ignore
+    create: function (context: {
+      name: string;
+      kind: DynamicTypeKind;
+      prompts: (PromptType | Record<string, string>)[];
+      beforeLife?: Hook;
+      afterDeath?: Hook;
+      dynamics?: (DynamicType | Record<string, DynamicType>)[];
+      context?: object;
+    }) {
+      const instantiatedPrompts = context.prompts.map((prompt) => {
+        if ("name" in prompt && "content" in prompt) {
+          return prompt as PromptType;
+        } else {
+          const key = Object.keys(prompt)[0];
+          const value = prompt[key];
+          return { name: key, content: value } as PromptType;
+        }
+      });
+
+      // @ts-ignore
+      const instantiatedDynamics =
+        context.dynamics?.map((dynamic) => {
+          if ("name" in dynamic && "kind" in dynamic) {
+            return dynamic as DynamicType;
+          } else {
+            const key = Object.keys(dynamic)[0];
+            const value = dynamic[key];
+            return Dynamic().create({ ...value, name: key });
+          }
+        }) || [];
+
+      return {
+        ...this.dynamic,
+        ...context,
+        prompts: instantiatedPrompts,
+        dynamics: instantiatedDynamics,
+      };
+    },
+    dynamic: {
+      name: "defaultDynamic",
+      kind: "chainOfThought",
+      prompts: [],
+      dynamics: [],
+      context: {},
+      run: function () {
+        return run(this as unknown as DynamicType);
+      },
+      beforeLife,
+      afterDeath,
+    },
+  };
 }

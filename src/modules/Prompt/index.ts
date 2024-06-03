@@ -1,59 +1,67 @@
 import Mustache from "mustache";
-import { PromptType, AIModel, Hook, PromptObject } from "../../types";
+import { PromptType, DynamicType, Hook } from "../../types";
 import { ask } from "../../adapters";
+import { useStore } from "../../store";
 
-export const defaultPrompt: PromptType = {
-  name: "defaultPrompt",
-  content: "Default analysis",
-  context: {},
-  model: "LLAMA3",
-  run: async function (dynamic, previousResult = {}) {
-    if (this.beforeLife) await this.beforeLife(dynamic.context, dynamic);
-
-    const data = {
-      ...dynamic.context,
-      ...previousResult,
-    };
-
-    const interpolatedContent = Mustache.render(this.content as string, data);
-
-    console.log(`Executing Prompt: ${this.name}`);
-
-    // console.log({ context: this.context });
-
-    let aiResponse = (await ask(interpolatedContent, this.model)) as string;
-
-    if (this.afterDeath) await this.afterDeath(dynamic.context, dynamic);
-
-    return { [this.name]: aiResponse };
-  },
-  beforeLife: () => console.log("Preparing Prompt..."),
-  afterDeath: () => console.log("Prompt completed."),
+const beforeLife: Hook = (context) => {
+  // console.log(`beforeLife: ${JSON.stringify(context)}`);
 };
 
-export function createPrompt({
-  name,
-  content,
-  context = {},
-  model = "LLAMA3",
-  beforeLife,
-  afterDeath,
-}: {
-  name: string;
-  content: string | PromptObject;
-  context: object;
-  params?: Record<string, any>;
-  model?: AIModel;
-  beforeLife?: Hook;
-  afterDeath?: Hook;
-}): PromptType {
+const afterDeath: Hook = (context) => {
+  // console.log(`afterDeath: ${JSON.stringify(context)}`);
+};
+
+const run = async (prompt: PromptType, dynamic: DynamicType) => {
+  const { setResponse, data } = useStore.getState();
+  if (prompt.beforeLife) {
+    const additionalContext = await prompt.beforeLife(data);
+    // @ts-ignore
+    if (additionalContext) {
+      Object.assign(data, additionalContext);
+    }
+  }
+
+  const interpolatedContent = Mustache.render(prompt.content as string, data);
+
+  console.log(`Invoking Prompt: ${prompt.name}`);
+  const aiResponse = (await ask(interpolatedContent, prompt.model)) as string;
+
+  if (prompt.afterDeath) {
+    const additionalContext = await prompt.afterDeath(data);
+    // @ts-ignore
+    if (additionalContext) {
+      Object.assign(data, additionalContext);
+    }
+  }
+
+  setResponse(dynamic.name, prompt.name, aiResponse);
+  return { [prompt.name]: aiResponse };
+};
+
+export default function Prompt() {
   return {
-    ...defaultPrompt,
-    name,
-    content,
-    context,
-    model,
-    beforeLife,
-    afterDeath,
+    create: function (content: string | Partial<PromptType>) {
+      if (typeof content === "string") {
+        return {
+          ...this.prompt,
+          content,
+        };
+      } else {
+        return {
+          ...this.prompt,
+          ...content,
+        };
+      }
+    },
+    prompt: {
+      name: "Prompt",
+      content: "Default prompt content",
+      model: "LLAMA3",
+      beforeLife,
+      afterDeath,
+      run: function (dynamic: DynamicType) {
+        return run(this as unknown as PromptType, dynamic);
+      },
+    },
   };
 }
