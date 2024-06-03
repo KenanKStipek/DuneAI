@@ -1,45 +1,34 @@
-import type { State } from "zustand/vanilla";
-import { MODELS } from "../adapters";
-
 export type AIModel = (typeof MODELS)[keyof typeof MODELS];
 
 export type DynamicTypeKind = "chainOfThought" | "treeOfThought";
 
 export type Hook = (state: State) => void | Promise<void>;
 
-export type PromptObject = {
+export type PromptType = {
   name: string;
-  content: string | PromptObject;
+  content: string | PromptType;
   model: AIModel;
-  run: (dynamic: DynamicType) => Promise<Record<string, any>>;
+  run: (
+    dynamic: DynamicType,
+    input?: any,
+  ) => Promise<string | Record<string, any>>;
   context?: Record<string, any>;
   beforeLife?: Hook;
   afterDeath?: Hook;
 };
 
-export type PromptInstruction = {
-  [key: string]: string;
-};
-
-export type DynamicInstruction = {
-  [key: string]: DynamicType;
-};
-
-export interface PromptType extends PromptObject {
-  content: string | PromptObject;
-}
-
-export type BaseDynamicType = {
+export type DynamicType = {
   name: string;
   kind: DynamicTypeKind;
-  prompts: (PromptType | PromptInstruction)[];
-  dynamics?: (DynamicType | DynamicInstruction)[];
+  prompts: (PromptType | Record<string, string>)[];
+  dynamics?: (DynamicType | Record<string, DynamicType>)[];
   context?: any;
-  run: () => Promise<Record<string, any>>;
+  run: (
+    dynamic: DynamicType,
+    input?: any,
+  ) => Promise<string | Record<string, string>>;
   beforeLife?: Hook;
   afterDeath?: Hook;
 };
 
-export type DynamicType = BaseDynamicType & {
-  kind: "chainOfThought" | "treeOfThought";
-};
+export type IteratableItem = PromptType | DynamicType | Record<string, any>;

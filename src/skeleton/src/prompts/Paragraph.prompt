@@ -1,0 +1,10 @@
+You are writing a story, here is the information for the story:
+Characters: {{ Story.Characters }}
+Story outline: {{ Story.StoryArc }}
+
+Write the next paragraph, here are the previous five written paragraphs:
+{{ Story.Writer_iteration_1.Paragraph }}
+{{ Story.Writer_iteration_2.Paragraph }}
+{{ Story.Writer_iteration_3.Paragraph }}
+{{ Story.Writer_iteration_4.Paragraph }}
+{{ Story.Writer_iteration_5.Paragraph }}

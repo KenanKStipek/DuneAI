@@ -27,7 +27,7 @@ const runChainOfThought = async (dynamic: DynamicType) => {
 
   for (const subDynamic of dynamic.dynamics || []) {
     const newSubDynamic = Dynamic().create(subDynamic as DynamicType);
-    const output = await newSubDynamic.run(dynamic);
+    const output = await newSubDynamic.run();
     if (typeof output === "object" && output !== null) {
       result = { ...result, ...output };
       setResponse(dynamic.name, newSubDynamic.name, output[newSubDynamic.name]);
@@ -61,7 +61,7 @@ const runTreeOfThought = async (dynamic: DynamicType) => {
   const dynamicResults = await Promise.all(
     dynamic.dynamics?.map(async (subDynamic) => {
       const newSubDynamic = Dynamic().create(subDynamic as DynamicType);
-      const output = await newSubDynamic.run(dynamic);
+      const output = await newSubDynamic.run();
       return output;
     }) || [],
   );
@@ -124,7 +124,6 @@ const run = async (dynamic: DynamicType) => {
 
 export default function Dynamic() {
   return {
-    // @ts-ignore
     create: function (context: {
       name: string;
       kind: DynamicTypeKind;
@@ -134,18 +133,19 @@ export default function Dynamic() {
       dynamics?: (DynamicType | Record<string, DynamicType>)[];
       context?: object;
     }) {
-      const instantiatedPrompts = context.prompts.map((prompt) => {
-        if ("name" in prompt && "content" in prompt) {
-          return prompt as PromptType;
-        } else {
-          const key = Object.keys(prompt)[0];
-          const value = prompt[key];
-          return { name: key, content: value } as PromptType;
-        }
-      });
+      const instantiatedPrompts: PromptType[] = context.prompts.map(
+        (prompt) => {
+          if ("name" in prompt && "content" in prompt) {
+            return prompt as PromptType;
+          } else {
+            const key = Object.keys(prompt)[0];
+            const value = prompt[key];
+            return { name: key, content: value } as PromptType;
+          }
+        },
+      );
 
-      // @ts-ignore
-      const instantiatedDynamics =
+      const instantiatedDynamics: DynamicType[] =
         context.dynamics?.map((dynamic) => {
           if ("name" in dynamic && "kind" in dynamic) {
             return dynamic as DynamicType;
