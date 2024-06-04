@@ -8,22 +8,24 @@ export default function Iterator(
 ): (DynamicType | PromptType)[] {
   const iteratedItems: (DynamicType | PromptType)[] = [];
 
-  for (let i = times - 1; i >= 0; i--) {
+  for (let iteration = 0; iteration < times; iteration++) {
     items.forEach((item) => {
       if ("kind" in item) {
         // Item is a DynamicType
         const dynamic = item as DynamicType;
         const newDynamic = Dynamic().create({
           ...dynamic,
-          name: `${dynamic.name}_iteration_${i + 1}`,
+          name: `${dynamic.name}_iteration_${iteration + 1}`,
+          iteration: iteration + 1,
         });
-        iteratedItems.push(newDynamic);
+        iteratedItems.push(newDynamic as DynamicType);
       } else if ("content" in item) {
         // Item is a PromptType
         const prompt = item as PromptType;
         const newPrompt = Prompt().create({
           ...prompt,
-          name: `${prompt.name}_iteration_${i + 1}`,
+          name: `${prompt.name}_iteration_${iteration + 1}`,
+          iteration: iteration + 1,
         });
         iteratedItems.push(newPrompt);
       } else {
@@ -34,13 +36,15 @@ export default function Iterator(
           const dynamic = value as DynamicType;
           const newDynamic = Dynamic().create({
             ...dynamic,
-            name: `${key}_iteration_${i + 1}`,
+            name: `${key}_iteration_${iteration + 1}`,
+            iteration: iteration + 1,
           });
-          iteratedItems.push(newDynamic);
+          iteratedItems.push(newDynamic as DynamicType);
         } else if (typeof value === "string") {
           const newPrompt = Prompt().create({
-            name: `${key}_iteration_${i + 1}`,
+            name: `${key}_iteration_${iteration + 1}`,
             content: value,
+            iteration: iteration + 1,
           });
           iteratedItems.push(newPrompt);
         }

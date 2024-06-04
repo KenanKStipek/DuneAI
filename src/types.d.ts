@@ -8,11 +8,9 @@ export type PromptType = {
   name: string;
   content: string | PromptType;
   model: AIModel;
-  run: (
-    dynamic: DynamicType,
-    input?: any,
-  ) => Promise<string | Record<string, any>>;
+  run: (dynamic: DynamicType, input?: any) => Promise<string>;
   context?: Record<string, any>;
+  iteration?: number;
   beforeLife?: Hook;
   afterDeath?: Hook;
 };
@@ -23,10 +21,8 @@ export type DynamicType = {
   prompts: (PromptType | Record<string, string>)[];
   dynamics?: (DynamicType | Record<string, DynamicType>)[];
   context?: any;
-  run: (
-    dynamic: DynamicType,
-    input?: any,
-  ) => Promise<string | Record<string, string>>;
+  run: (dynamic: DynamicType, input?: any) => Promise<void | any>;
+  iteration?: number;
   beforeLife?: Hook;
   afterDeath?: Hook;
 };

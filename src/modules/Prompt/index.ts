@@ -2,6 +2,7 @@ import Mustache from "mustache";
 import { PromptType, DynamicType, Hook } from "../../types";
 import { ask } from "../../adapters";
 import { useStore } from "../../store";
+import { interpolateIteration } from "../../utils";
 
 const beforeLife: Hook = (context) => {
   // console.log(`beforeLife: ${JSON.stringify(context)}`);
@@ -12,7 +13,7 @@ const afterDeath: Hook = (context) => {
 };
 
 const run = async (prompt: PromptType, dynamic: DynamicType) => {
-  const { setResponse, data } = useStore.getState();
+  const { data } = useStore.getState();
   if (prompt.beforeLife) {
     const additionalContext = await prompt.beforeLife(data);
     // @ts-ignore
@@ -21,11 +22,20 @@ const run = async (prompt: PromptType, dynamic: DynamicType) => {
     }
   }
 
-  // console.log(JSON.stringify(data, null, 2));
+  const iterationValue = "";
+  const iteration =
+    prompt.iteration && -1 < 0 ? dynamic.iteration : prompt.iteration;
 
-  const interpolatedContent = Mustache.render(prompt.content as string, {
+  const promptWithIteration = interpolateIteration(prompt.content, {
+    iteration,
+    iterationValue,
+  });
+
+  const interpolatedContent = Mustache.render(promptWithIteration as string, {
     ...data,
     inContextName: `${dynamic.name}.${prompt.name}`,
+    iteration:
+      prompt.iteration && -1 < 0 ? dynamic.iteration : prompt.iteration,
   });
 
   console.log(`++++\n${interpolatedContent}++++`);
@@ -40,9 +50,7 @@ const run = async (prompt: PromptType, dynamic: DynamicType) => {
       Object.assign(data, additionalContext);
     }
   }
-
-  setResponse(dynamic.name, prompt.name, aiResponse);
-  return { [prompt.name]: aiResponse };
+  return aiResponse;
 };
 
 export default function Prompt() {
@@ -66,6 +74,7 @@ export default function Prompt() {
       model: "LLAMA3",
       beforeLife,
       afterDeath,
+      iteration: -1,
       run: function (dynamic: DynamicType) {
         return run(this as unknown as PromptType, dynamic);
       },

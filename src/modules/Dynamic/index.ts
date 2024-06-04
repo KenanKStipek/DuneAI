@@ -14,27 +14,18 @@ const runChainOfThought = async (dynamic: DynamicType) => {
   console.log(`Running ${dynamic.name} Dynamic`);
   const { getState } = useStore;
   const { setResponse } = getState();
-  let result = { ...getState().data[dynamic.name], ...dynamic.context };
 
   for (const prompt of dynamic.prompts) {
-    const newPrompt = Prompt().create(prompt);
-    const output = await newPrompt.run(dynamic);
-    if (typeof output === "object" && output !== null) {
-      result = { ...result, ...output };
-      setResponse(dynamic.name, newPrompt.name, output[newPrompt.name]);
-    }
+    const output = await (prompt as PromptType).run(dynamic);
+    setResponse(dynamic.name, prompt.name, output);
   }
 
   for (const subDynamic of dynamic.dynamics || []) {
-    const newSubDynamic = Dynamic().create(subDynamic as DynamicType);
-    const output = await newSubDynamic.run();
-    if (typeof output === "object" && output !== null) {
-      result = { ...result, ...output };
-      setResponse(dynamic.name, newSubDynamic.name, output[newSubDynamic.name]);
-    }
+    const output = await (subDynamic as DynamicType).run(
+      subDynamic as DynamicType,
+    );
+    setResponse(dynamic.name, (subDynamic as DynamicType).name, output);
   }
-
-  return result;
 };
 
 const runTreeOfThought = async (dynamic: DynamicType) => {
@@ -53,7 +44,7 @@ const runTreeOfThought = async (dynamic: DynamicType) => {
   promptResults.forEach((output) => {
     if (typeof output === "object" && output !== null) {
       const name = Object.keys(output)[0];
-      result = { ...result, ...output };
+      result = { ...result };
       setResponse(dynamic.name, name, output[name]);
     }
   });
@@ -74,6 +65,7 @@ const runTreeOfThought = async (dynamic: DynamicType) => {
     } else if (typeof result === "object" && result !== null) {
       Object.assign(combinedResults, result);
       const name = Object.keys(result)[0];
+      // @ts-ignore
       setResponse(dynamic.name, name, result[name]);
     }
   });
@@ -119,12 +111,12 @@ const run = async (dynamic: DynamicType) => {
   }
 
   setResponse(dynamic.name, "context", dynamic.context);
-  return { [dynamic.name]: result };
+  return getState();
 };
 
 export default function Dynamic() {
   return {
-    create: function (context: {
+    create: function (params: {
       name: string;
       kind: DynamicTypeKind;
       prompts: (PromptType | Record<string, string>)[];
@@ -132,25 +124,25 @@ export default function Dynamic() {
       afterDeath?: Hook;
       dynamics?: (DynamicType | Record<string, DynamicType>)[];
       context?: object;
+      iteration?: number;
     }) {
       const { getState } = useStore;
       const { setContext } = getState();
-      setContext(context.context);
+      setContext(params.context);
 
-      const instantiatedPrompts: PromptType[] = context.prompts.map(
-        (prompt) => {
-          if ("name" in prompt && "content" in prompt) {
-            return prompt as PromptType;
-          } else {
-            const key = Object.keys(prompt)[0];
-            const value = prompt[key];
-            return { name: key, content: value } as PromptType;
-          }
-        },
-      );
+      const instantiatedPrompts: PromptType[] = params.prompts.map((prompt) => {
+        if ("name" in prompt && "content" in prompt) {
+          return prompt as PromptType;
+        } else {
+          const key = Object.keys(prompt)[0];
+          const value = prompt[key];
+          return Prompt().create({ name: key, content: value });
+        }
+      });
 
+      // @ts-ignore
       const instantiatedDynamics: DynamicType[] =
-        context.dynamics?.map((dynamic) => {
+        params.dynamics?.map((dynamic) => {
           if ("name" in dynamic && "kind" in dynamic) {
             return dynamic as DynamicType;
           } else {
@@ -162,7 +154,7 @@ export default function Dynamic() {
 
       return {
         ...this.dynamic,
-        ...context,
+        ...params,
         prompts: instantiatedPrompts,
         dynamics: instantiatedDynamics,
       };
@@ -176,6 +168,7 @@ export default function Dynamic() {
       run: function () {
         return run(this as unknown as DynamicType);
       },
+      iteration: -1,
       beforeLife,
       afterDeath,
     },

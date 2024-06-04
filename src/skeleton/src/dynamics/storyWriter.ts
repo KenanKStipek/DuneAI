@@ -9,4 +9,4 @@ export const Writer: DynamicType = DuneAI.Dynamic().create({
   name: "StoryWriter",
   kind: DuneAI.COT as DynamicTypeKind,
   prompts: [{ Paragraph }],
-});
+}) as DynamicType;
