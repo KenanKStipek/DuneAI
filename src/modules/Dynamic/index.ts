@@ -14,7 +14,7 @@ const runChainOfThought = async (dynamic: DynamicType) => {
   console.log(`Running ${dynamic.name} Dynamic`);
   const { getState } = useStore;
   const { setResponse } = getState();
-  let result = { ...getState().data[dynamic.name] };
+  let result = { ...getState().data[dynamic.name], ...dynamic.context };
 
   for (const prompt of dynamic.prompts) {
     const newPrompt = Prompt().create(prompt);
@@ -41,7 +41,7 @@ const runTreeOfThought = async (dynamic: DynamicType) => {
   console.log(`Running ${dynamic.name} Tree of Thought Dynamic`);
   const { getState } = useStore;
   const { setResponse } = getState();
-  let result = { ...getState().data[dynamic.name] };
+  let result = { ...getState().data[dynamic.name], ...dynamic.context };
 
   const promptResults = await Promise.all(
     dynamic.prompts.map((prompt) => {
@@ -118,7 +118,7 @@ const run = async (dynamic: DynamicType) => {
     }
   }
 
-  setResponse(dynamic.name, "context", result);
+  setResponse(dynamic.name, "context", dynamic.context);
   return { [dynamic.name]: result };
 };
 
@@ -133,6 +133,10 @@ export default function Dynamic() {
       dynamics?: (DynamicType | Record<string, DynamicType>)[];
       context?: object;
     }) {
+      const { getState } = useStore;
+      const { setContext } = getState();
+      setContext(context.context);
+
       const instantiatedPrompts: PromptType[] = context.prompts.map(
         (prompt) => {
           if ("name" in prompt && "content" in prompt) {

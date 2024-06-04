@@ -23,9 +23,12 @@ const run = async (prompt: PromptType, dynamic: DynamicType) => {
 
   // console.log(JSON.stringify(data, null, 2));
 
-  const interpolatedContent = Mustache.render(prompt.content as string, data);
+  const interpolatedContent = Mustache.render(prompt.content as string, {
+    ...data,
+    inContextName: `${dynamic.name}.${prompt.name}`,
+  });
 
-  console.log({ interpolatedContent });
+  console.log(`++++\n${interpolatedContent}++++`);
 
   console.log(`Invoking Prompt: ${prompt.name}`);
   const aiResponse = (await ask(interpolatedContent, prompt.model)) as string;

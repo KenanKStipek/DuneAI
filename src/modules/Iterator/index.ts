@@ -8,7 +8,7 @@ export default function Iterator(
 ): (DynamicType | PromptType)[] {
   const iteratedItems: (DynamicType | PromptType)[] = [];
 
-  for (let i = 0; i < times; i++) {
+  for (let i = times - 1; i >= 0; i--) {
     items.forEach((item) => {
       if ("kind" in item) {
         // Item is a DynamicType

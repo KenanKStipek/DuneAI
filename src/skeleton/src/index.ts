@@ -4,7 +4,7 @@ import { runPrimeDynamic } from "./dynamics";
   const result = await runPrimeDynamic({
     genre: "fantasy",
     characterCount: 3,
-    totalPageLength: 3,
+    paragraphCount: 3,
   });
   console.log(result);
 })();

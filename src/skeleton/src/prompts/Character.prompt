@@ -1,1 +1,1 @@
-Create {{ characterCount }} characters for a {{ genre }} story. Provide a name, a brief description, and their role in the story for each character.
+Create {{ context.characterCount }} characters for a {{ context.genre }} story. Provide a name, a brief description, and their role in the story for each character.

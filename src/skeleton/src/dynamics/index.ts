@@ -13,13 +13,17 @@ export const getPrimeDynamic = (context: any) =>
     kind: DuneAI.COT as DynamicTypeKind,
     context,
     prompts: [{ Character }, { StoryArc }],
-    dynamics: DuneAI.Iterator([{ Writer }], 5) as DynamicType[],
+    dynamics: DuneAI.Iterator(
+      [{ Writer }],
+      context.paragraphCount,
+    ) as DynamicType[],
   });
 
 export async function runPrimeDynamic(params: {
   genre?: string;
   characterCount?: number;
-  totalPageLength?: number;
+  paragraphCount?: number;
+  author?: string;
 }) {
   console.log("Starting the story creation process...");
 

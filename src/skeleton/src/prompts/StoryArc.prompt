@@ -1,1 +1,1 @@
-Develop a detailed but short outline for a {{ genre }} story with these {{ characterCount }} characters: {{ Story.Character }}
+Develop a detailed but short outline for a {{ context.genre }} story with these {{ context.characterCount }} characters: {{ Story.Character }}
