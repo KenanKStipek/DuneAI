@@ -1,1 +1,6 @@
-Develop a detailed but short outline for a {{ context.genre }} story with these {{ context.characterCount }} characters: {{ Story.Character }}
+Develop a detailed but short outline for a {{ context.genre }} story in the style written by {{ context.author }}.
+
+Keep it short. Do not use emojis. Do not include anything but the story information.
+
+Use these {{ context.characterCount }} characters:
+{{ Story.Character }}

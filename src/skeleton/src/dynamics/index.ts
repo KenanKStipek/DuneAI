@@ -1,7 +1,6 @@
 import DuneAI from "../../../";
 import { DynamicType, DynamicTypeKind } from "../../../types";
 import { Writer } from "./storyWriter";
-import { Editor } from "./storyEditor";
 
 const { Character, StoryArc } = DuneAI.importPrompts([
   "src/skeleton/src/prompts/Character.prompt",
@@ -16,7 +15,6 @@ export const getPrimeDynamic = (context: any) =>
     prompts: [{ Character }, { StoryArc }],
     dynamics: [
       ...DuneAI.Iterator([{ Writer }], { iterations: context.paragraphCount }),
-      ...DuneAI.Iterator([{ Editor }], { collectionKey: () => "Writer" }),
     ] as DynamicType[],
   });
 

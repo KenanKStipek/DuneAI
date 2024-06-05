@@ -9,7 +9,7 @@ export const ADAPTERS = {
 };
 
 export const MODELS = {
-  GPT_FOUR: { model: "gpt-4-0125-preview", adapter: "OPENAI" },
+  GPT_FOUR: { model: "gpt-4o", adapter: "OPENAI" },
   GPT_FOUR_BIG: { model: "gpt-4-32k", adapter: "OPENAI" },
   GPT_THREE: { model: "gpt-3.5-turbo", adapter: "OPENAI" },
   MISTRAL_7B: {
@@ -18,7 +18,7 @@ export const MODELS = {
   },
   ORCA_MINI_3B: { model: "orca-mini-3b-gguf2-q4_0.gguf", adapter: "GPT4ALL" },
   NOUS_HERMES: {
-    model: "nous-hermes-llama2-13b.Q4_0.gguf",
+    model: "Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf",
     adapter: "GPT4ALL",
   },
   LLAMA3XXX: {
