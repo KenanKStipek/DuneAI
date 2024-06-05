@@ -58,3 +58,12 @@ export const interpolateIteration = function (content, params) {
   const values = Object.values(params);
   return new Function(...keys, `return \`${content}\`;`)(...values);
 };
+
+export const attemptObjectification = (content: string) => {
+  // check if the object can be objectified
+};
+
+export const objectify = (content: string) => {
+  // check if the content string is a valid json object,
+  // if so, return it as a js object
+};

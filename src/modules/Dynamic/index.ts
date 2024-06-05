@@ -12,27 +12,37 @@ const afterDeath: Hook = async (context) => {
 
 const runChainOfThought = async (dynamic: DynamicType) => {
   console.log(`Running ${dynamic.name} Dynamic`);
-  const { getState } = useStore;
-  const { setResponse } = getState();
+  const { setGeneration } = useStore.getState();
 
   for (const prompt of dynamic.prompts) {
-    const output = await (prompt as PromptType).run(dynamic);
-    setResponse(dynamic.name, prompt.name, output);
+    const generation = await (prompt as PromptType).run(dynamic);
+    setGeneration(dynamic.name, prompt.name, generation);
   }
 
   for (const subDynamic of dynamic.dynamics || []) {
-    const output = await (subDynamic as DynamicType).run(
+    const generation = await (subDynamic as DynamicType).run(
       subDynamic as DynamicType,
     );
-    setResponse(dynamic.name, (subDynamic as DynamicType).name, output);
+    setGeneration(dynamic.name, (subDynamic as DynamicType).name, generation);
+    if (subDynamic.iteratable) {
+      const { generations } = useStore.getState();
+      setGeneration(dynamic.name, "iterated", {
+        ...generations[dynamic.name].iterated,
+        // @ts-ignore
+        [subDynamic.iteratable?.iteration]: generation,
+      });
+    }
   }
+
+  const result = useStore.getState().generations[dynamic.name];
+  return result;
 };
 
 const runTreeOfThought = async (dynamic: DynamicType) => {
   console.log(`Running ${dynamic.name} Tree of Thought Dynamic`);
   const { getState } = useStore;
-  const { setResponse } = getState();
-  let result = { ...getState().data[dynamic.name], ...dynamic.context };
+  const { setGeneration } = getState();
+  let result = { ...getState().generations[dynamic.name], ...dynamic.context };
 
   const promptResults = await Promise.all(
     dynamic.prompts.map((prompt) => {
@@ -45,7 +55,7 @@ const runTreeOfThought = async (dynamic: DynamicType) => {
     if (typeof output === "object" && output !== null) {
       const name = Object.keys(output)[0];
       result = { ...result };
-      setResponse(dynamic.name, name, output[name]);
+      setGeneration(dynamic.name, name, output[name]);
     }
   });
 
@@ -66,7 +76,7 @@ const runTreeOfThought = async (dynamic: DynamicType) => {
       Object.assign(combinedResults, result);
       const name = Object.keys(result)[0];
       // @ts-ignore
-      setResponse(dynamic.name, name, result[name]);
+      setGeneration(dynamic.name, name, result[name]);
     }
   });
 
@@ -75,15 +85,15 @@ const runTreeOfThought = async (dynamic: DynamicType) => {
 
 const run = async (dynamic: DynamicType) => {
   const { getState } = useStore;
-  const { setResponse } = getState();
+  const { setGeneration } = getState();
 
   if (dynamic.beforeLife) {
     const beforeLifeResult = await dynamic.beforeLife(
-      getState().data[dynamic.name],
+      getState().generations[dynamic.name],
     );
     // @ts-ignore
     if (beforeLifeResult) {
-      setResponse(dynamic.name, "beforeLife", beforeLifeResult);
+      setGeneration(dynamic.name, "beforeLife", beforeLifeResult);
     }
   }
 
@@ -106,12 +116,12 @@ const run = async (dynamic: DynamicType) => {
     const afterDeathResult = await dynamic.afterDeath(result);
     // @ts-ignore
     if (afterDeathResult) {
-      setResponse(dynamic.name, "afterDeath", afterDeathResult);
+      setGeneration(dynamic.name, "afterDeath", afterDeathResult);
     }
   }
 
-  setResponse(dynamic.name, "context", dynamic.context);
-  return getState();
+  setGeneration(dynamic.name, "context", dynamic.context);
+  return result;
 };
 
 export default function Dynamic() {
@@ -124,6 +134,7 @@ export default function Dynamic() {
       afterDeath?: Hook;
       dynamics?: (DynamicType | Record<string, DynamicType>)[];
       context?: object;
+      iteratable?: boolean | object;
       iteration?: number;
     }) {
       const { getState } = useStore;
@@ -168,7 +179,7 @@ export default function Dynamic() {
       run: function () {
         return run(this as unknown as DynamicType);
       },
-      iteration: -1,
+      iteratable: false,
       beforeLife,
       afterDeath,
     },

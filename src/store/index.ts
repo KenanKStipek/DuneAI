@@ -1,28 +1,34 @@
 import { createStore } from "zustand/vanilla";
 
 interface AppState {
-  data: Record<string, Record<string, any>>;
-  setResponse: (dynamicName: string, promptName: string, response: any) => void;
+  generations: Record<string, Record<string, any>>;
+  context: Record<string, any>;
+  setGeneration: (
+    dynamicName: string,
+    promptName: string,
+    generation: string | object,
+  ) => void;
   setContext: (context: any) => void;
 }
 
 export const useStore = createStore<AppState>((set) => ({
-  data: {},
-  setResponse: (dynamicName, promptName, response) =>
+  generations: {},
+  context: {},
+  setGeneration: (dynamicName, promptName, generation) =>
     set((state) => ({
-      data: {
-        ...state.data,
+      generations: {
+        ...state.generations,
         [dynamicName]: {
-          ...state.data[dynamicName],
-          [promptName]: response,
+          ...state.generations[dynamicName],
+          [promptName]: generation,
         },
       },
     })),
   setContext: (context) =>
     set((state) => ({
-      data: {
-        ...state.data,
-        context: context,
+      context: {
+        ...state.context,
+        ...context,
       },
     })),
 }));

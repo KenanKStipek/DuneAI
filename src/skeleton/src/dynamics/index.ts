@@ -15,8 +15,8 @@ export const getPrimeDynamic = (context: any) =>
     context,
     prompts: [{ Character }, { StoryArc }],
     dynamics: [
-      ...DuneAI.Iterator([{ Writer }], context.paragraphCount),
-      ...DuneAI.Iterator([{ Editor }], "Writer"),
+      ...DuneAI.Iterator([{ Writer }], { iterations: context.paragraphCount }),
+      ...DuneAI.Iterator([{ Editor }], { collectionKey: () => "Writer" }),
     ] as DynamicType[],
   });
 

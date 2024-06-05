@@ -1,56 +1,75 @@
-import { PromptType, DynamicType, IteratableItem } from "../../types";
+import { DynamicType } from "../../types";
 import Dynamic from "../Dynamic";
-import Prompt from "../Prompt";
+import { useStore } from "../../store";
+
+type IterationOptions = {
+  iterations?: number;
+  collectionKey?: () => string;
+  collection?: any[];
+};
 
 export default function Iterator(
-  items: IteratableItem[],
-  times: number,
-): (DynamicType | PromptType)[] {
-  const iteratedItems: (DynamicType | PromptType)[] = [];
+  items: (DynamicType | Record<string, DynamicType>)[],
+  options: IterationOptions,
+): DynamicType[] {
+  const { iterations, collectionKey, collection } = options;
+  const { getState } = useStore;
 
-  for (let iteration = 0; iteration < times; iteration++) {
-    items.forEach((item) => {
-      if ("kind" in item) {
-        // Item is a DynamicType
-        const dynamic = item as DynamicType;
-        const newDynamic = Dynamic().create({
-          ...dynamic,
-          name: `${dynamic.name}_iteration_${iteration + 1}`,
-          iteration: iteration + 1,
-        });
-        iteratedItems.push(newDynamic as DynamicType);
-      } else if ("content" in item) {
-        // Item is a PromptType
-        const prompt = item as PromptType;
-        const newPrompt = Prompt().create({
-          ...prompt,
-          name: `${prompt.name}_iteration_${iteration + 1}`,
-          iteration: iteration + 1,
-        });
-        iteratedItems.push(newPrompt);
-      } else {
-        // Item is an object that needs to be instantiated
-        const key = Object.keys(item)[0];
-        const value = item[key];
-        if (typeof value === "object" && "kind" in value) {
-          const dynamic = value as DynamicType;
-          const newDynamic = Dynamic().create({
-            ...dynamic,
-            name: `${key}_iteration_${iteration + 1}`,
-            iteration: iteration + 1,
-          });
-          iteratedItems.push(newDynamic as DynamicType);
-        } else if (typeof value === "string") {
-          const newPrompt = Prompt().create({
-            name: `${key}_iteration_${iteration + 1}`,
-            content: value,
-            iteration: iteration + 1,
-          });
-          iteratedItems.push(newPrompt);
-        }
-      }
-    });
+  let iterableCollection: any[] = [];
+
+  if (collectionKey) {
+    // Get the collection from the store using the collectionKey
+    const state = getState();
+    const dynamicCollection: [] = []; //state.generations[collectionKey()]?.iterated;
+
+    if (dynamicCollection && Array.isArray(dynamicCollection)) {
+      iterableCollection = dynamicCollection;
+    } else {
+      throw new Error(
+        `Collection with key ${collectionKey()} not found or is not an array.`,
+      );
+    }
+  } else if (collection) {
+    // Use the provided collection
+    if (Array.isArray(collection)) {
+      iterableCollection = collection;
+    } else {
+      throw new Error("Provided collection is not an array.");
+    }
+  } else if (iterations !== undefined) {
+    // Create a collection based on the number of iterations
+    iterableCollection = Array.from({ length: iterations }, (_, i) => i + 1);
+  } else {
+    throw new Error(
+      "Either iterations, collectionKey, or collection must be provided.",
+    );
   }
+
+  const instantiatedItems: DynamicType[] = items.map((item) => {
+    if ("name" in item && "kind" in item) {
+      return item as DynamicType;
+    } else {
+      const key = Object.keys(item)[0];
+      const value = item[key];
+      return Dynamic().create({ ...value, name: key });
+    }
+  });
+
+  const iteratedItems: DynamicType[] = [];
+
+  iterableCollection.forEach((iterationValue, index) => {
+    instantiatedItems.forEach((item) => {
+      const newItem = Dynamic().create({
+        ...item,
+        name: `${item.name}_iteration_${index + 1}`,
+        iteratable: {
+          iteration: index + 1,
+          iterationValue,
+        },
+      });
+      iteratedItems.push(newItem);
+    });
+  });
 
   return iteratedItems;
 }
