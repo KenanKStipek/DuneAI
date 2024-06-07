@@ -6,8 +6,8 @@ import { runPrimeDynamic } from "./dynamics";
 (async () => {
   const result = await runPrimeDynamic({
     genre: "high fantasy",
-    characterCount: 20,
-    paragraphCount: 2000,
+    characterCount: 3,
+    paragraphCount: 2,
     author: "Sarah J Maas",
   });
 

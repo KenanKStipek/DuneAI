@@ -25,8 +25,12 @@ export type DynamicType = {
     | {
         iteration?: number;
         iterationValue?: string;
+        collectionKey?: string;
       }
-    | boolean;
+    | {
+        [key: string]: any;
+      }
+    | false;
 };
 
 export type IteratableItem = PromptType | DynamicType | Record<string, any>;

@@ -15,10 +15,6 @@ Be aware of how far into the story you are compared to the outline to keep the s
 Do not continue the story outline, you are writing the story now.
 
 Write the next paragraph, here are the previous few paragraphs:
-{{ Writer_iteration_${iteration - 7}.Paragraph }}
-{{ Writer_iteration_${iteration - 6}.Paragraph }}
-{{ Writer_iteration_${iteration - 5}.Paragraph }}
-{{ Writer_iteration_${iteration - 4}.Paragraph }}
 {{ Writer_iteration_${iteration - 3}.Paragraph }}
 {{ Writer_iteration_${iteration - 2}.Paragraph }}
 {{ Writer_iteration_${iteration - 1}.Paragraph }}

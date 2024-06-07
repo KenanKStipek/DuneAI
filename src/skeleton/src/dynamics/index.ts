@@ -1,6 +1,7 @@
 import DuneAI from "../../../";
 import { DynamicType, DynamicTypeKind } from "../../../types";
 import { Writer } from "./storyWriter";
+import { Editor } from "./storyEditor";
 
 const { Character, StoryArc } = DuneAI.importPrompts([
   "src/skeleton/src/prompts/Character.prompt",
@@ -16,7 +17,7 @@ export const getPrimeDynamic = (context: any) =>
     dynamics: [
       ...DuneAI.Iterator([{ Writer }], { iterations: context.paragraphCount }),
     ] as DynamicType[],
-  });
+  } as unknown as DynamicType);
 
 export async function runPrimeDynamic(params: {
   genre?: string;
@@ -27,5 +28,5 @@ export async function runPrimeDynamic(params: {
   console.log("Starting the story creation process...");
 
   const prime = getPrimeDynamic(params);
-  return await prime.run();
+  return await prime.run(prime as DynamicType);
 }

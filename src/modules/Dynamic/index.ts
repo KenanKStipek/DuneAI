@@ -1,5 +1,6 @@
 import { PromptType, DynamicType, Hook, DynamicTypeKind } from "../../types";
 import Prompt from "../Prompt";
+import Iterator from "../Iterator";
 import { useStore } from "../../store";
 
 const beforeLife: Hook = async (context) => {
@@ -12,12 +13,48 @@ const afterDeath: Hook = async (context) => {
 
 const runChainOfThought = async (dynamic: DynamicType) => {
   console.log(`Running ${dynamic.name} Dynamic`);
-  const { setGeneration } = useStore.getState();
+  const { generations, setGeneration } = useStore.getState();
 
   for (const prompt of dynamic.prompts) {
     const generation = await (prompt as PromptType).run(dynamic);
     setGeneration(dynamic.name, prompt.name, generation);
   }
+
+  // WORKING ON GETTING THE ITERATION BY COLLECTION KEY WORKING
+
+  // If the dynamics collection is an iterable dynamic with collectionKey
+  // regenerate the Iterator with the collection from the store.
+  //
+  //
+  // @ts-ignore
+  // console.log(
+  //   // @ts-ignore
+  //   generations[dynamic?.iteratable?.collectionKey?.()]?.iterated ??
+  //     Object.values(
+  //       // @ts-ignore
+  //       generations[dynamic?.iteratable?.collectionKey?.()]?.iterated,
+  //     ),
+  // );
+  // // @ts-ignore
+  // if (!!dynamic?.iteratable?.collectionKey?.()) {
+  //   // console.log({
+  //   //   // @ts-ignore
+  //   //   iterated:
+  //   //     // @ts-ignore
+  //   //     generations[dynamic?.iteratable?.collectionKey?.()]?.iterated ??
+  //   //     Object.values(
+  //   //       // @ts-ignore
+  //   //       generations[dynamic?.iteratable?.collectionKey?.()]?.iterated,
+  //   //     ),
+  //   // });
+
+  //   dynamic.dynamics = Iterator(dynamic.dynamics as DynamicType[], {
+  //     collection: Object.values(
+  //       // @ts-ignore
+  //       generations[dynamic?.iteratable?.collectionKey]?.iterated,
+  //     ),
+  //   });
+  // }
 
   for (const subDynamic of dynamic.dynamics || []) {
     const generation = await (subDynamic as DynamicType).run(
@@ -62,6 +99,7 @@ const runTreeOfThought = async (dynamic: DynamicType) => {
   const dynamicResults = await Promise.all(
     dynamic.dynamics?.map(async (subDynamic) => {
       const newSubDynamic = Dynamic().create(subDynamic as DynamicType);
+      // @ts-ignore
       const output = await newSubDynamic.run();
       return output;
     }) || [],
@@ -126,17 +164,7 @@ const run = async (dynamic: DynamicType) => {
 
 export default function Dynamic() {
   return {
-    create: function (params: {
-      name: string;
-      kind: DynamicTypeKind;
-      prompts: (PromptType | Record<string, string>)[];
-      beforeLife?: Hook;
-      afterDeath?: Hook;
-      dynamics?: (DynamicType | Record<string, DynamicType>)[];
-      context?: object;
-      iteratable?: boolean | object;
-      iteration?: number;
-    }) {
+    create: function (params: DynamicType) {
       const { getState } = useStore;
       const { setContext } = getState();
       setContext(params.context);

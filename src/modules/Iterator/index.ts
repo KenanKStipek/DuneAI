@@ -1,6 +1,5 @@
 import { DynamicType } from "../../types";
 import Dynamic from "../Dynamic";
-import { useStore } from "../../store";
 
 type IterationOptions = {
   iterations?: number;
@@ -13,22 +12,11 @@ export default function Iterator(
   options: IterationOptions,
 ): DynamicType[] {
   const { iterations, collectionKey, collection } = options;
-  const { getState } = useStore;
 
   let iterableCollection: any[] = [];
 
   if (collectionKey) {
-    // Get the collection from the store using the collectionKey
-    const state = getState();
-    const dynamicCollection: [] = []; //state.generations[collectionKey()]?.iterated;
-
-    if (dynamicCollection && Array.isArray(dynamicCollection)) {
-      iterableCollection = dynamicCollection;
-    } else {
-      throw new Error(
-        `Collection with key ${collectionKey()} not found or is not an array.`,
-      );
-    }
+    iterableCollection = [collectionKey];
   } else if (collection) {
     // Use the provided collection
     if (Array.isArray(collection)) {
@@ -45,6 +33,7 @@ export default function Iterator(
     );
   }
 
+  // @ts-ignore
   const instantiatedItems: DynamicType[] = items.map((item) => {
     if ("name" in item && "kind" in item) {
       return item as DynamicType;
@@ -57,6 +46,8 @@ export default function Iterator(
 
   const iteratedItems: DynamicType[] = [];
 
+  console.log({ iterableCollection });
+
   iterableCollection.forEach((iterationValue, index) => {
     instantiatedItems.forEach((item) => {
       const newItem = Dynamic().create({
@@ -64,12 +55,15 @@ export default function Iterator(
         name: `${item.name}_iteration_${index + 1}`,
         iteratable: {
           iteration: index + 1,
+          collectionKey,
           iterationValue,
         },
       });
-      iteratedItems.push(newItem);
+      iteratedItems.push(newItem as DynamicType);
     });
   });
+
+  console.log({ iterableCollection });
 
   return iteratedItems;
 }

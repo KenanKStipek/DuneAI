@@ -5,6 +5,6 @@ const { Edit } = DuneAI.importPrompts(["src/skeleton/src/prompts/Edit.prompt"]);
 
 export const Editor: DynamicType = DuneAI.Dynamic().create({
   name: "StoryEditor",
-  kind: DuneAI.TOT as DynamicTypeKind,
+  kind: DuneAI.COT as DynamicTypeKind,
   prompts: [{ Edit }],
-}) as DynamicType;
+} as unknown as DynamicType) as DynamicType;

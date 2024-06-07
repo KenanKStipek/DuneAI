@@ -30,7 +30,7 @@ const run = async (prompt: PromptType, dynamic: DynamicType) => {
     iteration,
   });
 
-  console.log(`++++\n${interpolatedContent}++++`);
+  // console.log(`++++\n${interpolatedContent}++++`);
 
   console.log(`Invoking Prompt: ${prompt.name}`);
   const aiResponse = (await ask(interpolatedContent, prompt.model)) as string;
@@ -55,7 +55,7 @@ export default function Prompt() {
     prompt: {
       name: "Prompt",
       content: "Default prompt content",
-      model: "GPT_FOUR",
+      model: "LLAMA3",
       run: function (dynamic: DynamicType) {
         return run(this as unknown as PromptType, dynamic);
       },
