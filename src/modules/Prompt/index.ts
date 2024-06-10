@@ -55,7 +55,7 @@ export default function Prompt() {
     prompt: {
       name: "Prompt",
       content: "Default prompt content",
-      model: "LLAMA3",
+      model: "GPT_FOUR",
       run: function (dynamic: DynamicType) {
         return run(this as unknown as PromptType, dynamic);
       },

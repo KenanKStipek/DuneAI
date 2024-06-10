@@ -1,0 +1,966 @@
+./middleware/logger.ts:
+// Logger interface
+interface Logger {
+  info(message: string): void;
+  error(message: string): void;
+  warn(message: string): void;
+  // Add other necessary log methods or levels you want to support
+}
+
+// Define a default logger using console to use if no custom logger is provided
+const defaultLogger: Logger = {
+  info: (message) => console.log(message),
+  error: (message) => console.error(message),
+  warn: (message) => console.warn(message),
+};
+
+./middleware/index.ts:
+
+./.DS_Store:
+BetonvSrskeletonvSrnlong
+                        @   @
+                             EDSDB    @
+./types.d.ts:
+export type AIModel = (typeof MODELS)[keyof typeof MODELS];
+
+export type DynamicTypeKind = "chainOfThought" | "treeOfThought";
+
+export type Hook = (state: State) => void | Promise<void>;
+
+export type PromptType = {
+  name: string;
+  content: string | PromptType;
+  model: AIModel;
+  run: (dynamic: DynamicType, input?: any) => Promise<string>;
+  context?: Record<string, any>;
+};
+
+export type DynamicType = {
+  name: string;
+  kind: DynamicTypeKind;
+  prompts: (PromptType | Record<string, string>)[];
+  dynamics?: (DynamicType | Record<string, DynamicType>)[];
+  context?: any;
+  run: (dynamic: DynamicType, input?: any) => Promise<void | any>;
+  beforeLife?: Hook;
+  afterDeath?: Hook;
+  iteratable?:
+    | {
+        iteration?: number;
+        iterationValue?: string;
+        collectionKey?: string;
+      }
+    | {
+        [key: string]: any;
+      }
+    | false;
+};
+
+export type IteratableItem = PromptType | DynamicType | Record<string, any>;
+
+./skeleton/.DS_Store:
+Bud%srcvSrnlongrnlong
+                     @   @
+                          E%DSDB   @
+./skeleton/.default-env:
+
+./skeleton/config.ts:
+
+./skeleton/src/dynamics/storyEditor.ts:
+import DuneAI from "../../../";
+import { DynamicType, DynamicTypeKind } from "../../../types";
+
+const { Edit } = DuneAI.importPrompts(["src/skeleton/src/prompts/Edit.prompt"]);
+
+export const Editor: DynamicType = DuneAI.Dynamic().create({
+  name: "StoryEditor",
+  kind: DuneAI.COT as DynamicTypeKind,
+  prompts: [{ Edit }],
+} as unknown as DynamicType) as DynamicType;
+
+./skeleton/src/dynamics/storyWriter.ts:
+import DuneAI from "../../../";
+import { DynamicType, DynamicTypeKind } from "../../../types";
+
+const { Paragraph } = DuneAI.importPrompts([
+  "src/skeleton/src/prompts/Paragraph.prompt",
+]);
+
+export const Writer: DynamicType = DuneAI.Dynamic().create({
+  name: "StoryWriter",
+  kind: DuneAI.COT as DynamicTypeKind,
+  prompts: [{ Paragraph }],
+} as unknown as DynamicType) as DynamicType;
+
+./skeleton/src/dynamics/index.ts:
+import DuneAI from "../../../";
+import { DynamicType, DynamicTypeKind } from "../../../types";
+import { Writer } from "./storyWriter";
+import { Editor } from "./storyEditor";
+
+const { Character, StoryArc } = DuneAI.importPrompts([
+  "src/skeleton/src/prompts/Character.prompt",
+  "src/skeleton/src/prompts/StoryArc.prompt",
+]);
+
+export const getPrimeDynamic = (context: any) =>
+  DuneAI.Dynamic().create({
+    name: "Story",
+    kind: DuneAI.COT as DynamicTypeKind,
+    context,
+    prompts: [{ Character }, { StoryArc }],
+    dynamics: [
+      ...DuneAI.Iterator([{ Writer }], { iterations: context.paragraphCount }),
+    ] as DynamicType[],
+  } as unknown as DynamicType);
+
+export async function runPrimeDynamic(params: {
+  genre?: string;
+  characterCount?: number;
+  paragraphCount?: number;
+  author?: string;
+}) {
+  console.log("Starting the story creation process...");
+
+  const prime = getPrimeDynamic(params);
+  return await prime.run(prime as DynamicType);
+}
+
+./skeleton/src/utils/index.ts:
+
+./skeleton/src/prompts/Paragraph.prompt:
+You are writing a story, here is the information for the story:
+Characters:
+{{ Story.Character }}
+Story outline:
+{{ Story.StoryArc }}
+
+The story is written in the style of {{ context.author }}.
+
+Do not include anything but the content of the new paragraph. Do not introduce the paragraphs.
+
+This is paragraph ${iteration} of {{ context.paragraphCount }} in the entire story.
+
+Be aware of how far into the story you are compared to the outline to keep the story on track to end on time.
+
+Do not continue the story outline, you are writing the story now.
+
+Write the next paragraph, here are the previous few paragraphs:
+{{ Writer_iteration_${iteration - 3}.Paragraph }}
+{{ Writer_iteration_${iteration - 2}.Paragraph }}
+{{ Writer_iteration_${iteration - 1}.Paragraph }}
+
+./skeleton/src/prompts/Edit.prompt:
+You are writing a story, here is the information for the story:
+Characters:
+{{ Story.Character }}
+Story outline:
+{{ Story.StoryArc }}
+
+Paragraphs should vary in length and style, to stay natural to the author.
+
+This is paragraph of ${iteration} in the entire story.
+
+The total number of paragraphs are {{ context.paragraphCount }}.
+
+Write the next paragraph, here is the previous paragraph:
+{{ Writer_iteration_${iteration - 1}.Paragraph }}
+
+./skeleton/src/prompts/StoryArc.prompt:
+Develop a detailed but short outline for a {{ context.genre }} story in the style written by {{ context.author }}.
+
+Keep it short. Do not use emojis. Do not include anything but the story information.
+
+Use these {{ context.characterCount }} characters:
+{{ Story.Character }}
+
+./skeleton/src/prompts/Character.prompt:
+Create {{ context.characterCount }} characters for a {{ context.genre }} story in the style written by {{ context.author }}.
+
+Keep it short. Do not use emojis. Do not include anything but character information.
+
+Fill out this form for each character, select from the list if a list is provided in brackets:
+Name:
+Synonyms:
+Age:
+Background:
+Description:
+Role: [Protagonist, Antagonist, Love interest, Confidant, Deuteragonists, Tertiary, Foil]
+Type: [Dynamic, Round, Static, Stock, Symbolic]
+Archetype: [Lover, Hero, Magician, Outlaw, Explorer, Sage, Innocent, Creator, Ruler, Caregiver, Everyman, Jester]
+
+./skeleton/src/index.ts:
+import { promises as fs } from "fs";
+import * as path from "path";
+
+import { runPrimeDynamic } from "./dynamics";
+
+(async () => {
+  const result = await runPrimeDynamic({
+    genre: "high fantasy",
+    characterCount: 3,
+    paragraphCount: 2,
+    author: "Sarah J Maas",
+  });
+
+  // Assuming the structure of result.Write.Iterator
+  const paragraphs = [];
+  for (const [_, value] of Object.entries(result.iterated)) {
+    // @ts-ignore
+    if (value.Paragraph) {
+      // @ts-ignore
+      paragraphs.push(value.Paragraph);
+    }
+  }
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const tempFilePath = path.join(
+    __dirname,
+    "temp",
+    `tempResult_${timestamp}.json`,
+  );
+  const tempParagraphsFilePath = path.join(
+    __dirname,
+    "temp",
+    `tempParagraphs_${timestamp}.json`,
+  );
+
+  await fs.writeFile(tempFilePath, JSON.stringify(result, null, 2));
+  await fs.writeFile(tempParagraphsFilePath, paragraphs.join("\n"));
+
+  console.log(`Result saved to: ${tempFilePath}`);
+  console.log(`Paragraphs saved to: ${tempParagraphsFilePath}`);
+})();
+
+./utils/throttling.ts:
+import Bottleneck from "bottleneck";
+import { retryOperation } from "./";
+
+export const DELAY = 500;
+export const RETRY_COUNT = 3;
+export const MAX_CONCURRENT = 5;
+
+// Setup for the bottleneck limiter
+const limiter = new Bottleneck({
+  minTime: DELAY,
+  maxConcurrent: MAX_CONCURRENT,
+});
+
+// Generalized function to perform throttled operations with retries
+export const throttledOperation = async (
+  operation: () => Promise<any>,
+  options?: any,
+) => {
+  return await limiter.schedule(
+    () => retryOperation(operation, DELAY, RETRY_COUNT),
+    {
+      priority: 1,
+      weight: 1,
+      id: options?.id || "default_id",
+    },
+  );
+};
+
+./utils/index.ts:
+import path from "path";
+import fs from "fs";
+
+export const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export const retryOperation = (
+  operation: any,
+  delay: number,
+  retries: number,
+) =>
+  new Promise((resolve, reject) => {
+    return operation()
+      .then(resolve)
+      .catch((reason: string) => {
+        if (retries > 0) {
+          return wait(delay)
+            .then(retryOperation.bind(null, operation, delay, retries - 1))
+            .then(resolve)
+            .catch(reject);
+        }
+        return reject(reason);
+      });
+  });
+
+export const shuffle = (array: string[][]) => {
+  return array
+    .map((value) => ({ value, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ value }) => value);
+};
+
+const importPrompt = (filePath: string): string => {
+  const absolutePath = path.resolve(process.cwd(), filePath);
+  return fs.readFileSync(absolutePath, "utf8");
+};
+
+export const importPrompts = (
+  filePaths: string | string[],
+): Record<string, string> => {
+  const prompts: Record<string, string> = {};
+
+  if (typeof filePaths === "string") {
+    const fileName = path.basename(filePaths, path.extname(filePaths));
+    prompts[fileName] = importPrompt(filePaths);
+  } else {
+    filePaths.forEach((filePath) => {
+      const fileName = path.basename(filePath, path.extname(filePath));
+      prompts[fileName] = importPrompt(filePath);
+    });
+  }
+
+  return prompts;
+};
+
+// @ts-ignore
+export const interpolateIteration = function (content, params) {
+  const keys = Object.keys(params);
+  const values = Object.values(params);
+  return new Function(...keys, `return \`${content}\`;`)(...values);
+};
+
+export const attemptObjectification = (content: string) => {
+  // check if the object can be objectified
+};
+
+export const objectify = (content: string) => {
+  // check if the content string is a valid json object,
+  // if so, return it as a js object
+};
+
+./adapters/sdwebui.ts:
+import SDWebUI from "node-sd-webui";
+import { throttledOperation } from "../utils/throttling";
+
+const sdWebUI = SDWebUI({
+  apiUrl: "http://127.0.0.1:7860",
+});
+
+const generateImage = async (prompt: string, options: any = {}) => {
+  try {
+    // Include the options in the API call
+    const result = await sdWebUI.txt2img({ prompt, ...options });
+    return result; //.imageUrl; // Adjust based on the actual API response
+  } catch (error) {
+    console.error("Error during image generation:", error);
+    throw error;
+  }
+};
+
+export const ask = async (
+  prompt: string | Record<string, any>,
+  options?: any,
+) => {
+  if (typeof prompt === "object") {
+    options = prompt;
+    prompt = options.prompt;
+  }
+  return await throttledOperation(
+    () => generateImage(prompt as string, options),
+    {
+      id: prompt, // Use prompt as the unique identifier for throttling purposes
+    },
+  );
+};
+
+./adapters/openai.ts:
+import OpenAI from "openai";
+import { OPENAI_API_KEY } from "../";
+import { throttledOperation } from "../utils/throttling";
+
+export const openai = new OpenAI({
+  apiKey: OPENAI_API_KEY,
+});
+
+const getCompletion = async (
+  content: string,
+  { model, ...options } = { model: "GPT_FOUR" },
+) => {
+  const params: OpenAI.Chat.ChatCompletionCreateParams = {
+    messages: [{ role: "user", content }],
+    model,
+    ...options,
+  };
+  // @ts-ignore
+  const chatCompletion: OpenAI.Chat.ChatCompletion =
+    await openai.chat.completions.create(params);
+  return chatCompletion.choices[0].message?.content;
+};
+
+export const ask = async (
+  prompt: string | Record<string, any>,
+  options?: any,
+) => {
+  return (await throttledOperation(
+    () => getCompletion(prompt as string, options),
+    {
+      id: prompt,
+    },
+  )) as string;
+};
+
+./adapters/gpt4all.ts:
+import * as gpt from "gpt4all";
+import { throttledOperation } from "../utils/throttling";
+import { MODELS } from "./";
+import type { AIModel } from "../types";
+
+// Optional interface for completion options
+interface CompletionOptions {
+  model: AIModel;
+  verbose?: boolean;
+  device?: string;
+}
+
+// Placeholder for model type (could be more specific based on the library)
+type ModelType = any;
+
+// Load or get the already loaded model
+async function getModel(
+  modelPath: string,
+  device: string = "cpu",
+): Promise<ModelType> {
+  let model: ModelType | null = null;
+  try {
+    model = await gpt.loadModel(modelPath, { device });
+    console.log("Model loaded successfully:", modelPath);
+  } catch (error) {
+    console.error("Failed to load model:", error);
+    throw error;
+  }
+  return model;
+}
+
+const getCompletion = async (content: string, options: CompletionOptions) => {
+  // @ts-ignore
+  const modelPath = options.model;
+  const modelInstance = await getModel(modelPath, options.device || "cpu");
+  const chat = await modelInstance.createChatSession();
+  try {
+    const completion = await gpt.createCompletion(chat, content, options);
+    disposeModel(modelInstance, modelPath);
+    return completion.choices[0].message.content;
+  } catch (error) {
+    console.error("Error during completion:", error);
+    disposeModel(modelInstance, modelPath);
+    throw error;
+  }
+};
+
+export const ask = async (
+  prompt: string | Record<string, any>,
+  options: CompletionOptions,
+): Promise<string> => {
+  return (await throttledOperation(
+    () => getCompletion(prompt as string, options),
+    {
+      id: prompt,
+    },
+  )) as string;
+};
+
+export const disposeModel = (model: ModelType, name: string): void => {
+  if (model) {
+    model.dispose();
+    console.log(`Model instance for ${name} disposed`);
+  }
+};
+
+./adapters/index.ts:
+import * as gpt4all from "./gpt4all";
+import * as openai from "./openai";
+import * as sdwebui from "./sdwebui";
+
+export const ADAPTERS = {
+  GPT4ALL: gpt4all,
+  OPENAI: openai,
+  SDWEBUI: sdwebui,
+};
+
+export const MODELS = {
+  GPT_FOUR: { model: "gpt-4o", adapter: "OPENAI" },
+  GPT_FOUR_BIG: { model: "gpt-4-32k", adapter: "OPENAI" },
+  GPT_THREE: { model: "gpt-3.5-turbo", adapter: "OPENAI" },
+  MISTRAL_7B: {
+    model: "mistral-7b-openorca.gguf2.Q4_0.gguf",
+    adapter: "GPT4ALL",
+  },
+  ORCA_MINI_3B: { model: "orca-mini-3b-gguf2-q4_0.gguf", adapter: "GPT4ALL" },
+  NOUS_HERMES: {
+    model: "Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf",
+    adapter: "GPT4ALL",
+  },
+  LLAMA3XXX: {
+    model: "LexiFun-Llama-3-8B-Uncensored-V1_F16.gguf",
+    adapter: "GPT4ALL",
+  },
+  LLAMA3: {
+    model: "Meta-Llama-3-8B-Instruct.Q4_0.gguf",
+    adapter: "GPT4ALL",
+  },
+  SD: { model: "sd", adapter: "SDWEBUI" },
+} as const;
+
+// Unified ask method that delegates to the correct adapter based on the modelKey
+export async function ask(
+  prompt: string | Record<string, any>,
+  modelKey: keyof typeof MODELS,
+  options?: any,
+) {
+  const adapterKey = MODELS[modelKey].adapter;
+  const model = MODELS[modelKey].model;
+  const adapter = ADAPTERS[adapterKey];
+  return adapter.ask(prompt, { model, ...options });
+}
+
+./api/cli/index.ts:
+
+./api/events/index.ts:
+
+./api/gateway/index..ts:
+
+./index.ts:
+import Prompt from "./modules/Prompt";
+import Dynamic from "./modules/Dynamic";
+import Iterator from "./modules/Iterator";
+import { importPrompts } from "./utils/index";
+
+export const OPENAI_API_KEY = "1";
+
+export default {
+  Prompt,
+  Dynamic,
+  Iterator,
+  importPrompts,
+  COT: "chainOfThought",
+  TOT: "treeOfThought",
+};
+
+./modules/Dynamic/index.ts:
+import { PromptType, DynamicType, Hook, DynamicTypeKind } from "../../types";
+import Prompt from "../Prompt";
+import Iterator from "../Iterator";
+import { useStore } from "../../store";
+
+const beforeLife: Hook = async (context) => {
+  // console.log(`beforeLife: ${JSON.stringify(context)}`);
+};
+
+const afterDeath: Hook = async (context) => {
+  // console.log(`afterDeath: ${JSON.stringify(context)}`);
+};
+
+const runChainOfThought = async (dynamic: DynamicType) => {
+  console.log(`Running ${dynamic.name} Dynamic`);
+  const { generations, setGeneration } = useStore.getState();
+
+  for (const prompt of dynamic.prompts) {
+    const generation = await (prompt as PromptType).run(dynamic);
+    setGeneration(dynamic.name, prompt.name, generation);
+  }
+
+  // WORKING ON GETTING THE ITERATION BY COLLECTION KEY WORKING
+
+  // If the dynamics collection is an iterable dynamic with collectionKey
+  // regenerate the Iterator with the collection from the store.
+  //
+  //
+  // @ts-ignore
+  // console.log(
+  //   // @ts-ignore
+  //   generations[dynamic?.iteratable?.collectionKey?.()]?.iterated ??
+  //     Object.values(
+  //       // @ts-ignore
+  //       generations[dynamic?.iteratable?.collectionKey?.()]?.iterated,
+  //     ),
+  // );
+  // // @ts-ignore
+  // if (!!dynamic?.iteratable?.collectionKey?.()) {
+  //   // console.log({
+  //   //   // @ts-ignore
+  //   //   iterated:
+  //   //     // @ts-ignore
+  //   //     generations[dynamic?.iteratable?.collectionKey?.()]?.iterated ??
+  //   //     Object.values(
+  //   //       // @ts-ignore
+  //   //       generations[dynamic?.iteratable?.collectionKey?.()]?.iterated,
+  //   //     ),
+  //   // });
+
+  //   dynamic.dynamics = Iterator(dynamic.dynamics as DynamicType[], {
+  //     collection: Object.values(
+  //       // @ts-ignore
+  //       generations[dynamic?.iteratable?.collectionKey]?.iterated,
+  //     ),
+  //   });
+  // }
+
+  for (const subDynamic of dynamic.dynamics || []) {
+    const generation = await (subDynamic as DynamicType).run(
+      subDynamic as DynamicType,
+    );
+    setGeneration(dynamic.name, (subDynamic as DynamicType).name, generation);
+    if (subDynamic.iteratable) {
+      const { generations } = useStore.getState();
+      setGeneration(dynamic.name, "iterated", {
+        ...generations[dynamic.name].iterated,
+        // @ts-ignore
+        [subDynamic.iteratable?.iteration]: generation,
+      });
+    }
+  }
+
+  const result = useStore.getState().generations[dynamic.name];
+  return result;
+};
+
+const runTreeOfThought = async (dynamic: DynamicType) => {
+  console.log(`Running ${dynamic.name} Tree of Thought Dynamic`);
+  const { getState } = useStore;
+  const { setGeneration } = getState();
+  let result = { ...getState().generations[dynamic.name], ...dynamic.context };
+
+  const promptResults = await Promise.all(
+    dynamic.prompts.map((prompt) => {
+      const newPrompt = Prompt().create(prompt);
+      return newPrompt.run(dynamic);
+    }),
+  );
+
+  promptResults.forEach((output) => {
+    if (typeof output === "object" && output !== null) {
+      const name = Object.keys(output)[0];
+      result = { ...result };
+      setGeneration(dynamic.name, name, output[name]);
+    }
+  });
+
+  const dynamicResults = await Promise.all(
+    dynamic.dynamics?.map(async (subDynamic) => {
+      const newSubDynamic = Dynamic().create(subDynamic as DynamicType);
+      // @ts-ignore
+      const output = await newSubDynamic.run();
+      return output;
+    }) || [],
+  );
+
+  const combinedResults: Record<string, string> = {};
+  [...promptResults, ...dynamicResults].forEach((result) => {
+    if (typeof result === "string") {
+      combinedResults["combinedString"] =
+        (combinedResults["combinedString"] || "") + result;
+    } else if (typeof result === "object" && result !== null) {
+      Object.assign(combinedResults, result);
+      const name = Object.keys(result)[0];
+      // @ts-ignore
+      setGeneration(dynamic.name, name, result[name]);
+    }
+  });
+
+  return combinedResults;
+};
+
+const run = async (dynamic: DynamicType) => {
+  const { getState } = useStore;
+  const { setGeneration } = getState();
+
+  if (dynamic.beforeLife) {
+    const beforeLifeResult = await dynamic.beforeLife(
+      getState().generations[dynamic.name],
+    );
+    // @ts-ignore
+    if (beforeLifeResult) {
+      setGeneration(dynamic.name, "beforeLife", beforeLifeResult);
+    }
+  }
+
+  console.log(`Starting Dynamic: ${dynamic.kind}`);
+
+  let result: any;
+  switch (dynamic.kind) {
+    case "chainOfThought":
+      result = await runChainOfThought(dynamic);
+      break;
+    case "treeOfThought":
+      result = await runTreeOfThought(dynamic);
+      break;
+    default:
+      console.error("Unknown dynamic type");
+      return {};
+  }
+
+  if (dynamic.afterDeath) {
+    const afterDeathResult = await dynamic.afterDeath(result);
+    // @ts-ignore
+    if (afterDeathResult) {
+      setGeneration(dynamic.name, "afterDeath", afterDeathResult);
+    }
+  }
+
+  setGeneration(dynamic.name, "context", dynamic.context);
+  return result;
+};
+
+export default function Dynamic() {
+  return {
+    create: function (params: DynamicType) {
+      const { getState } = useStore;
+      const { setContext } = getState();
+      setContext(params.context);
+
+      const instantiatedPrompts: PromptType[] = params.prompts.map((prompt) => {
+        if ("name" in prompt && "content" in prompt) {
+          return prompt as PromptType;
+        } else {
+          const key = Object.keys(prompt)[0];
+          const value = prompt[key];
+          return Prompt().create({ name: key, content: value });
+        }
+      });
+
+      // @ts-ignore
+      const instantiatedDynamics: DynamicType[] =
+        params.dynamics?.map((dynamic) => {
+          if ("name" in dynamic && "kind" in dynamic) {
+            return dynamic as DynamicType;
+          } else {
+            const key = Object.keys(dynamic)[0];
+            const value = dynamic[key];
+            return Dynamic().create({ ...value, name: key });
+          }
+        }) || [];
+
+      return {
+        ...this.dynamic,
+        ...params,
+        prompts: instantiatedPrompts,
+        dynamics: instantiatedDynamics,
+      };
+    },
+    dynamic: {
+      name: "defaultDynamic",
+      kind: "chainOfThought",
+      prompts: [],
+      dynamics: [],
+      context: {},
+      run: function () {
+        return run(this as unknown as DynamicType);
+      },
+      iteratable: false,
+      beforeLife,
+      afterDeath,
+    },
+  };
+}
+
+./modules/Iterator/index.ts:
+import { DynamicType } from "../../types";
+import Dynamic from "../Dynamic";
+
+type IterationOptions = {
+  iterations?: number;
+  collectionKey?: () => string;
+  collection?: any[];
+};
+
+export default function Iterator(
+  items: (DynamicType | Record<string, DynamicType>)[],
+  options: IterationOptions,
+): DynamicType[] {
+  const { iterations, collectionKey, collection } = options;
+
+  let iterableCollection: any[] = [];
+
+  if (collectionKey) {
+    iterableCollection = [collectionKey];
+  } else if (collection) {
+    // Use the provided collection
+    if (Array.isArray(collection)) {
+      iterableCollection = collection;
+    } else {
+      throw new Error("Provided collection is not an array.");
+    }
+  } else if (iterations !== undefined) {
+    // Create a collection based on the number of iterations
+    iterableCollection = Array.from({ length: iterations }, (_, i) => i + 1);
+  } else {
+    throw new Error(
+      "Either iterations, collectionKey, or collection must be provided.",
+    );
+  }
+
+  // @ts-ignore
+  const instantiatedItems: DynamicType[] = items.map((item) => {
+    if ("name" in item && "kind" in item) {
+      return item as DynamicType;
+    } else {
+      const key = Object.keys(item)[0];
+      const value = item[key];
+      return Dynamic().create({ ...value, name: key });
+    }
+  });
+
+  const iteratedItems: DynamicType[] = [];
+
+  console.log({ iterableCollection });
+
+  iterableCollection.forEach((iterationValue, index) => {
+    instantiatedItems.forEach((item) => {
+      const newItem = Dynamic().create({
+        ...item,
+        name: `${item.name}_iteration_${index + 1}`,
+        iteratable: {
+          iteration: index + 1,
+          collectionKey,
+          iterationValue,
+        },
+      });
+      iteratedItems.push(newItem as DynamicType);
+    });
+  });
+
+  console.log({ iterableCollection });
+
+  return iteratedItems;
+}
+
+./modules/Prompt/index.ts:
+import Mustache from "mustache";
+import { PromptType, DynamicType } from "../../types";
+import { ask } from "../../adapters";
+import { useStore } from "../../store";
+import { interpolateIteration } from "../../utils";
+
+const run = async (prompt: PromptType, dynamic: DynamicType) => {
+  const data = useStore.getState();
+
+  // @ts-ignore
+  const iterationValue = dynamic.iteratable?.iterationValue || "";
+  // @ts-ignore
+  const iteration = dynamic.iteratable?.iteration || -1;
+
+  const promptWithIteration =
+    (iteration &&
+      interpolateIteration(prompt.content, {
+        iteration,
+        iterationValue,
+      })) ||
+    prompt.content;
+
+  const interpolatedContent = Mustache.render(promptWithIteration as string, {
+    ...{
+      context: data.context,
+      ...data.generations,
+    },
+    generationName: `${dynamic.name}.${prompt.name}`,
+    iterationValue,
+    iteration,
+  });
+
+  // console.log(`++++\n${interpolatedContent}++++`);
+
+  console.log(`Invoking Prompt: ${prompt.name}`);
+  const aiResponse = (await ask(interpolatedContent, prompt.model)) as string;
+  return aiResponse;
+};
+
+export default function Prompt() {
+  return {
+    create: function (content: string | Partial<PromptType>) {
+      if (typeof content === "string") {
+        return {
+          ...this.prompt,
+          content,
+        };
+      } else {
+        return {
+          ...this.prompt,
+          ...content,
+        };
+      }
+    },
+    prompt: {
+      name: "Prompt",
+      content: "Default prompt content",
+      model: "LLAMA3",
+      run: function (dynamic: DynamicType) {
+        return run(this as unknown as PromptType, dynamic);
+      },
+    },
+  };
+}
+
+./store/index.ts:
+import { createStore } from "zustand/vanilla";
+
+interface AppState {
+  generations: Record<string, Record<string, any>>;
+  context: Record<string, any>;
+  setGeneration: (
+    dynamicName: string,
+    promptName: string,
+    generation: string | object,
+  ) => void;
+  setContext: (context: any) => void;
+}
+
+export const useStore = createStore<AppState>((set) => ({
+  generations: {},
+  context: {},
+  setGeneration: (dynamicName, promptName, generation) =>
+    set((state) => ({
+      generations: {
+        ...state.generations,
+        [dynamicName]: {
+          ...state.generations[dynamicName],
+          [promptName]: generation,
+        },
+      },
+    })),
+  setContext: (context) =>
+    set((state) => ({
+      context: {
+        ...state.context,
+        ...context,
+      },
+    })),
+}));
+
+package.json
+
+{
+  "name": "duneai",
+  "version": "1.0.0",
+  "bin": {
+    "duneai-setup": "./bin/duneai-setup.js"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/mustache": "^4.2.5",
+    "@types/node": "^20.12.7",
+    "commander": "^12.0.0",
+    "fs-extra": "^11.2.0",
+    "ts-node": "^10.9.2",
+    "ts-transformer-keys": "^0.4.4",
+    "typescript": "^5.4.5"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "dev": "ts-node src/app.ts",
+    "run": "ts-node src/skeleton/src/index.ts",
+    "setup": "ts-node scripts/setup.ts"
+  },
+  "dependencies": {
+    "bottleneck": "^2.19.5",
+    "gpt4all": "^4.0.0",
+    "mustache": "^4.2.0",
+    "node-sd-webui": "^0.0.8",
+    "openai": "^4.38.5",
+    "zustand": "^4.5.2"
+  }
+}
