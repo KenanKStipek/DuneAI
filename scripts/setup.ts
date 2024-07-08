@@ -25,6 +25,7 @@ const createProjectStructure = (projectName: string, outputDir: string) => {
   const projectDir = path.join(outputDir, projectName);
   const skeletonDir = path.join(__dirname, '..', 'src', 'skeleton');
 
+  console.log('Creating project structure...');
   // Ensure the output directory exists, or create it
   fs.ensureDirSync(projectDir);
 
@@ -36,6 +37,8 @@ const createProjectStructure = (projectName: string, outputDir: string) => {
   const envContent = `OPENAI_API_KEY: ###\n`;
   fs.writeFileSync(path.join(projectDir, 'README.md'), configContent);
   fs.writeFileSync(path.join(projectDir, '.default-env'), envContent);
+
+  console.log('Project structure created successfully.');
 };
 
 const App = () => {
@@ -43,10 +46,16 @@ const App = () => {
   const [status, setStatus] = useState('Initializing');
 
   useEffect(() => {
-    setTimeout(() => {
-      createProjectStructure(options.name, options.output);
-      setStatus('Completed');
-    }, 2000);
+    console.log('Effect triggered.');
+    try {
+      setTimeout(() => {
+        createProjectStructure(options.name, options.output);
+        setStatus('Completed');
+      }, 2000);
+    } catch (error) {
+      console.error('Error creating project structure:', error);
+      setStatus('Error');
+    }
   }, []);
 
   useInput((input, key) => {
@@ -66,6 +75,11 @@ const App = () => {
     <Text>
     Project < Text bold > { options.name } < /Text> has been initialized at <Text bold>{path.join(options.output, options.name)}</Text >
       </Text>
+          )
+}
+{
+  status === 'Error' && (
+    <Text color="red" > An error occurred during setup.< /Text>
           )
 }
 </Text>
