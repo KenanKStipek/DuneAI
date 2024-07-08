@@ -64,14 +64,11 @@ const App = () => {
     <Box flexDirection="column">
       <Box>
         <Text>
-          <Text color="green">
-            {status === "Initializing" && <Spinner type="dots" />}
-          </Text>
+          <Text color="green">{status === "Initializing" && <Spinner type="dots" />}</Text>
           {status === "Initializing" && " Setting up your project..."}
           {status === "Completed" && (
             <Text>
-              Project <Text bold>{options.name}</Text> has been initialized at{" "}
-              <Text bold>{path.join(options.output, options.name)}</Text>
+              Project <Text bold>{options.name}</Text> has been initialized at <Text bold>{path.join(options.output, options.name)}</Text>
             </Text>
           )}
           {status === "Error" && (
