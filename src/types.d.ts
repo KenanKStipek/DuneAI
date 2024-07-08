@@ -6,31 +6,31 @@ export type Hook = (state: State) => void | Promise<void>;
 
 export type PromptType = {
   name: string;
-  content: string | PromptType;
+  content: string;
   model: AIModel;
   run: (dynamic: DynamicType, input?: any) => Promise<string>;
   context?: Record<string, any>;
-};
-
-export type DynamicType = {
-  name: string;
-  kind: DynamicTypeKind;
-  prompts: (PromptType | Record<string, string>)[];
-  dynamics?: (DynamicType | Record<string, DynamicType>)[];
-  context?: any;
-  run: (dynamic: DynamicType, input?: any) => Promise<void | any>;
-  beforeLife?: Hook;
-  afterDeath?: Hook;
   iteratable?:
+    | false
     | {
         iteration?: number;
         iterationValue?: string;
         collectionKey?: string;
-      }
-    | {
-        [key: string]: any;
-      }
-    | false;
+      };
 };
 
-export type IteratableItem = PromptType | DynamicType | Record<string, any>;
+export type DynamicType = {
+  name: string;
+  kind?: DynamicTypeKind;
+  prompts: (PromptType | Record<string, string>)[];
+  context?: any;
+  run?: (dynamic: DynamicType, input?: any) => Promise<void | any>;
+  beforeLife?: Hook;
+  afterDeath?: Hook;
+};
+
+export type IterationOptions = {
+  iterations?: number;
+  collectionKey?: () => string;
+  collection?: any[];
+};

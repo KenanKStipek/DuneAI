@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import glob from "glob";
 
 export const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -34,20 +35,17 @@ const importPrompt = (filePath: string): string => {
   return fs.readFileSync(absolutePath, "utf8");
 };
 
-export const importPrompts = (
-  filePaths: string | string[],
-): Record<string, string> => {
+export const importPrompts = (dirPath: string): Record<string, string> => {
   const prompts: Record<string, string> = {};
+  const absoluteDirPath = path.resolve(process.cwd(), dirPath);
+  const filePaths = fs
+    .readdirSync(absoluteDirPath)
+    .filter((file) => file.endsWith(".prompt"));
 
-  if (typeof filePaths === "string") {
-    const fileName = path.basename(filePaths, path.extname(filePaths));
-    prompts[fileName] = importPrompt(filePaths);
-  } else {
-    filePaths.forEach((filePath) => {
-      const fileName = path.basename(filePath, path.extname(filePath));
-      prompts[fileName] = importPrompt(filePath);
-    });
-  }
+  filePaths.forEach((filePath) => {
+    const fileName = path.basename(filePath, path.extname(filePath));
+    prompts[fileName] = importPrompt(path.join(absoluteDirPath, filePath));
+  });
 
   return prompts;
 };

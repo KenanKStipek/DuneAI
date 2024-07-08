@@ -8,9 +8,9 @@ const run = async (prompt: PromptType, dynamic: DynamicType) => {
   const data = useStore.getState();
 
   // @ts-ignore
-  const iterationValue = dynamic.iteratable?.iterationValue || "";
+  const iterationValue = prompt.iteratable?.iterationValue || "";
   // @ts-ignore
-  const iteration = dynamic.iteratable?.iteration || -1;
+  const iteration = prompt.iteratable?.iteration || -1;
 
   const promptWithIteration =
     (iteration &&
@@ -55,7 +55,7 @@ export default function Prompt() {
     prompt: {
       name: "Prompt",
       content: "Default prompt content",
-      model: "GPT_FOUR",
+      model: "LLAMA3",
       run: function (dynamic: DynamicType) {
         return run(this as unknown as PromptType, dynamic);
       },

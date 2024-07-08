@@ -1,7 +1,0 @@
-Write me an outline with {{ context.sectionCount }} sections for a readme of this project:
-
-{{ context.project }}
-
-Here is the example template to follow:
-
-{{ context.readmeExample }}

@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "bottleneck": "^2.19.5",
+    "glob": "^10.4.1",
     "gpt4all": "^4.0.0",
     "mustache": "^4.2.0",
     "node-sd-webui": "^0.0.8",

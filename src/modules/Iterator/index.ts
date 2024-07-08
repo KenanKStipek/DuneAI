@@ -1,5 +1,5 @@
-import { DynamicType } from "../../types";
-import Dynamic from "../Dynamic";
+import { PromptType } from "../../types";
+import Prompt from "../Prompt";
 
 type IterationOptions = {
   iterations?: number;
@@ -8,9 +8,9 @@ type IterationOptions = {
 };
 
 export default function Iterator(
-  items: (DynamicType | Record<string, DynamicType>)[],
+  items: (PromptType | Record<string, string>)[],
   options: IterationOptions,
-): DynamicType[] {
+): PromptType[] {
   const { iterations, collectionKey, collection } = options;
 
   let iterableCollection: any[] = [];
@@ -33,37 +33,33 @@ export default function Iterator(
     );
   }
 
-  // @ts-ignore
-  const instantiatedItems: DynamicType[] = items.map((item) => {
-    if ("name" in item && "kind" in item) {
-      return item as DynamicType;
+  const instantiatedItems: PromptType[] = items.map((item) => {
+    if ("name" in item && "content" in item) {
+      return item as PromptType;
     } else {
       const key = Object.keys(item)[0];
       const value = item[key];
-      return Dynamic().create({ ...value, name: key });
+      // @ts-ignore
+      return Prompt().create({ name: key, content: value });
     }
   });
 
-  const iteratedItems: DynamicType[] = [];
-
-  console.log({ iterableCollection });
+  const iteratedItems: PromptType[] = [];
 
   iterableCollection.forEach((iterationValue, index) => {
     instantiatedItems.forEach((item) => {
-      const newItem = Dynamic().create({
+      const newItem = Prompt().create({
         ...item,
         name: `${item.name}_iteration_${index + 1}`,
         iteratable: {
           iteration: index + 1,
-          collectionKey,
+          collectionKey: `${collectionKey}`,
           iterationValue,
         },
       });
-      iteratedItems.push(newItem as DynamicType);
+      iteratedItems.push(newItem as PromptType);
     });
   });
-
-  console.log({ iterableCollection });
 
   return iteratedItems;
 }
