@@ -3,11 +3,11 @@
 const { Command } = require("commander");
 const fs = require("fs-extra");
 const path = require("path");
-const ora = require("ora");
 
 // Dynamically import chalk
 async function setup() {
   const chalk = (await import("chalk")).default;
+  const ora = (await import("ora")).default;
 
   const program = new Command();
 
