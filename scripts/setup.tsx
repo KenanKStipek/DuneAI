@@ -26,13 +26,9 @@ const createProjectStructure = (projectName: string, outputDir: string) => {
   const skeletonDir = path.join(__dirname, "..", "src", "skeleton");
 
   console.log("Creating project structure...");
-  // Ensure the output directory exists, or create it
   fs.ensureDirSync(projectDir);
-
-  // Copy the skeleton directory to the new project directory
   fs.copySync(skeletonDir, projectDir);
 
-  // Generate additional config files
   const configContent = `Project Name: ${options.name}\nUpstream AI: ${options.upstream}\nInitialization: ${options.init}`;
   const envContent = `OPENAI_API_KEY: ###\n`;
   fs.writeFileSync(path.join(projectDir, "README.md"), configContent);
