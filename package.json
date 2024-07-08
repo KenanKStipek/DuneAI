@@ -4,14 +4,6 @@
   "bin": {
     "init": "./bin/duneai-setup.js"
   },
-  "devDependencies": {
-    "@types/fs-extra": "^11.0.4",
-    "@types/mustache": "^4.2.5",
-    "@types/node": "^20.12.7",
-    "fs-extra": "^11.2.0",
-    "ts-transformer-keys": "^0.4.4",
-    "typescript": "^5.4.5"
-  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/app.js",
@@ -20,6 +12,12 @@
     "setup": "ts-node scripts/setup.ts"
   },
   "dependencies": {
+    "@types/mustache": "^4.2.5",
+    "@types/node": "^20.12.7",
+    "ts-transformer-keys": "^0.4.4",
+    "typescript": "^5.4.5",
+    "@types/fs-extra": "^11.0.4",
+    "fs-extra": "^11.2.0",
     "bottleneck": "^2.19.5",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
