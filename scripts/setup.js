@@ -3,48 +3,54 @@
 const { Command } = require("commander");
 const fs = require("fs-extra");
 const path = require("path");
-const chalk = require("chalk");
 const ora = require("ora");
 
-const program = new Command();
+// Dynamically import chalk
+async function setup() {
+  const chalk = (await import("chalk")).default;
 
-program
-  .name("setup")
-  .description("Setup script for initializing DuneAI projects")
-  .requiredOption("-n, --name <projectName>", "Project name")
-  .option("-u, --upstream <upstreamAI>", "Upstream AI provider", "openai")
-  .option("-i, --init <initMethod>", "Initialization method (cli/mq)", "cli")
-  .option("-o, --output <outputDir>", "Output directory", ".");
+  const program = new Command();
 
-program.parse(process.argv);
+  program
+    .name("setup")
+    .description("Setup script for initializing DuneAI projects")
+    .requiredOption("-n, --name <projectName>", "Project name")
+    .option("-u, --upstream <upstreamAI>", "Upstream AI provider", "openai")
+    .option("-i, --init <initMethod>", "Initialization method (cli/mq)", "cli")
+    .option("-o, --output <outputDir>", "Output directory", ".");
 
-const options = program.opts();
+  program.parse(process.argv);
 
-const createProjectStructure = (projectName, outputDir) => {
-  const spinner = ora("Creating project structure...").start();
+  const options = program.opts();
 
-  try {
-    const projectDir = path.join(outputDir, projectName);
-    const skeletonDir = path.join(__dirname, "..", "src", "skeleton");
+  const createProjectStructure = (projectName, outputDir) => {
+    const spinner = ora("Creating project structure...").start();
 
-    fs.ensureDirSync(projectDir);
-    fs.copySync(skeletonDir, projectDir);
+    try {
+      const projectDir = path.join(outputDir, projectName);
+      const skeletonDir = path.join(__dirname, "..", "src", "skeleton");
 
-    const configContent = `Project Name: ${options.name}\nUpstream AI: ${options.upstream}\nInitialization: ${options.init}`;
-    const envContent = `OPENAI_API_KEY: ###\n`;
-    fs.writeFileSync(path.join(projectDir, "README.md"), configContent);
-    fs.writeFileSync(path.join(projectDir, ".default-env"), envContent);
+      fs.ensureDirSync(projectDir);
+      fs.copySync(skeletonDir, projectDir);
 
-    spinner.succeed("Project structure created successfully.");
-  } catch (error) {
-    spinner.fail("Error creating project structure.");
-    console.error(chalk.red(error));
-  }
-};
+      const configContent = `Project Name: ${options.name}\nUpstream AI: ${options.upstream}\nInitialization: ${options.init}`;
+      const envContent = `OPENAI_API_KEY: ###\n`;
+      fs.writeFileSync(path.join(projectDir, "README.md"), configContent);
+      fs.writeFileSync(path.join(projectDir, ".default-env"), envContent);
 
-const runSetup = () => {
-  console.log(chalk.blue("Starting setup..."));
-  createProjectStructure(options.name, options.output);
-};
+      spinner.succeed("Project structure created successfully.");
+    } catch (error) {
+      spinner.fail("Error creating project structure.");
+      console.error(chalk.red(error));
+    }
+  };
 
-runSetup();
+  const runSetup = () => {
+    console.log(chalk.blue("Starting setup..."));
+    createProjectStructure(options.name, options.output);
+  };
+
+  runSetup();
+}
+
+setup();
