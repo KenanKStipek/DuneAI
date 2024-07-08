@@ -1,3 +1,4 @@
 #!/usr/bin/env node
-require("ts-node").register();
+require = require("esm")(module /*, options*/);
+require("ts-node/register");
 require("../scripts/setup.ts");
