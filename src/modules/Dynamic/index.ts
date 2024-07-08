@@ -4,7 +4,7 @@ import Prompt from "../Prompt";
 import { useStore } from "../../store";
 
 export const createDynamic = (
-  params: DynamicType,
+  params: Partial<DynamicType>,
   overrides: Partial<Dependencies> = {},
 ): DynamicType => {
   const dynamicDependencies: Dependencies = {
@@ -16,16 +16,18 @@ export const createDynamic = (
   const { setContext } = getState();
   setContext(params.context);
 
-  const instantiatedPrompts: PromptType[] = params.prompts.map((prompt) => {
-    if ("name" in prompt && "content" in prompt) {
-      return prompt as PromptType;
-    } else {
-      const key = Object.keys(prompt)[0];
-      const value = prompt[key];
-      return Prompt().create({ name: key, content: value });
-    }
-  });
+  const instantiatedPrompts: PromptType[] | [] =
+    params?.prompts?.map((prompt) => {
+      if ("name" in prompt && "content" in prompt) {
+        return prompt as PromptType;
+      } else {
+        const key = Object.keys(prompt)[0];
+        const value = prompt[key];
+        return Prompt().create({ name: key, content: value });
+      }
+    }) || [];
 
+  // @ts-ignore
   return Object.freeze({
     kind: "chainOfThought",
     ...params,

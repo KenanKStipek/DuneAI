@@ -1,8 +1,51 @@
+import path from "path";
+import fs from "fs";
 import Mustache from "mustache";
 import { PromptType, DynamicType } from "../../types";
 import { ask } from "../../adapters";
 import { useStore } from "../../store";
 import { interpolateIteration } from "../../utils";
+
+const importPrompt = (filePath: string): string => {
+  const absolutePath = path.resolve(process.cwd(), filePath);
+  return fs.readFileSync(absolutePath, "utf8");
+};
+
+const parsePromptsFromFile = (content: string): Record<string, string> => {
+  const prompts: Record<string, string> = {};
+  const sections = content.split(/^#\s*(\w+)/gm);
+
+  for (let i = 1; i < sections.length; i += 2) {
+    const name = sections[i];
+    const promptContent = sections[i + 1].trim();
+    prompts[name] = promptContent;
+  }
+
+  return prompts;
+};
+
+export const importPrompts = (
+  dirOrFilePath: string,
+): Record<string, string> => {
+  const absolutePath = path.resolve(process.cwd(), dirOrFilePath);
+
+  if (fs.lstatSync(absolutePath).isDirectory()) {
+    const prompts: Record<string, string> = {};
+    const filePaths = fs
+      .readdirSync(absolutePath)
+      .filter((file) => file.endsWith(".prompt"));
+
+    filePaths.forEach((filePath) => {
+      const fileName = path.basename(filePath, path.extname(filePath));
+      prompts[fileName] = importPrompt(path.join(absolutePath, filePath));
+    });
+
+    return prompts;
+  } else {
+    const content = importPrompt(absolutePath);
+    return parsePromptsFromFile(content);
+  }
+};
 
 const run = async (prompt: PromptType, dynamic: DynamicType) => {
   const data = useStore.getState();

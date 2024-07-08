@@ -24,7 +24,7 @@ export type DynamicType = {
   kind?: DynamicTypeKind;
   prompts: (PromptType | Record<string, string>)[];
   context?: any;
-  run?: (dynamic: DynamicType, input?: any) => Promise<void | any>;
+  run: (dynamic?: DynamicType, input?: any) => Promise<void | any>;
   beforeLife?: Hook;
   afterDeath?: Hook;
 };

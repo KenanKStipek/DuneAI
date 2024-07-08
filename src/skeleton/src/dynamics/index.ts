@@ -2,12 +2,12 @@ import * as path from "path";
 import DuneAI from "../../../";
 import { DynamicType } from "../../../types";
 
-const fullPath = path.resolve(__dirname, "../prompts/");
+const fullPath = path.resolve(__dirname, "../prompts/Prompts.prompt");
 const { Languages, HelloWorld, Respond } = DuneAI.importPrompts(fullPath);
 
 const COUNT = 5;
 
-const SayHelloWorld: DynamicType = DuneAI.Dynamic({
+export const SayHelloWorld: DynamicType = DuneAI.createDynamic({
   name: "Say",
   context: {
     Count: COUNT,
@@ -17,9 +17,4 @@ const SayHelloWorld: DynamicType = DuneAI.Dynamic({
     ...DuneAI.Iterator([{ HelloWorld }], { iterations: COUNT }),
     { Respond },
   ],
-}) as DynamicType;
-
-export async function runDynamic() {
-  // @ts-ignore
-  return await SayHelloWorld.run();
-}
+});
