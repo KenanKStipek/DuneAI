@@ -1,17 +1,21 @@
-import { Command } from "commander";
+#!/usr/bin/env ts-node
 
-import fs from "fs-extra";
-import path from "path";
+import React, { useState, useEffect } from 'react';
+import { render, Box, Text, Newline, useApp, useInput } from 'ink';
+import { Spinner } from 'ink-spinner';
+import { Command } from 'commander';
+import fs from 'fs-extra';
+import path from 'path';
 
 const program = new Command();
 
 program
-  .name("setup")
-  .description("Setup script for initializing DuneAI projects")
-  .requiredOption("-n, --name <projectName>", "Project name")
-  .option("-u, --upstream <upstreamAI>", "Upstream AI provider", "openai")
-  .option("-i, --init <initMethod>", "Initialization method (cli/mq)", "cli")
-  .option("-o, --output <outputDir>", "Output directory", ".");
+  .name('setup')
+  .description('Setup script for initializing DuneAI projects')
+  .requiredOption('-n, --name <projectName>', 'Project name')
+  .option('-u, --upstream <upstreamAI>', 'Upstream AI provider', 'openai')
+  .option('-i, --init <initMethod>', 'Initialization method (cli/mq)', 'cli')
+  .option('-o, --output <outputDir>', 'Output directory', '.');
 
 program.parse(process.argv);
 
@@ -19,7 +23,7 @@ const options = program.opts();
 
 const createProjectStructure = (projectName: string, outputDir: string) => {
   const projectDir = path.join(outputDir, projectName);
-  const skeletonDir = path.join(__dirname, "..", "src", "skeleton");
+  const skeletonDir = path.join(__dirname, '..', 'src', 'skeleton');
 
   // Ensure the output directory exists, or create it
   fs.ensureDirSync(projectDir);
@@ -30,10 +34,55 @@ const createProjectStructure = (projectName: string, outputDir: string) => {
   // Generate additional config files
   const configContent = `Project Name: ${options.name}\nUpstream AI: ${options.upstream}\nInitialization: ${options.init}`;
   const envContent = `OPENAI_API_KEY: ###\n`;
-  fs.writeFileSync(path.join(projectDir, "README.md"), configContent);
-  fs.writeFileSync(path.join(projectDir, ".default-env"), envContent);
-
-  console.log(`Project ${options.name} has been initialized at ${projectDir}`);
+  fs.writeFileSync(path.join(projectDir, 'README.md'), configContent);
+  fs.writeFileSync(path.join(projectDir, '.default-env'), envContent);
 };
 
-createProjectStructure(options.name, options.output);
+const App = () => {
+  const { exit } = useApp();
+  const [status, setStatus] = useState('Initializing');
+
+  useEffect(() => {
+    setTimeout(() => {
+      createProjectStructure(options.name, options.output);
+      setStatus('Completed');
+    }, 2000);
+  }, []);
+
+  useInput((input, key) => {
+    if (key.escape) {
+      exit();
+    }
+  });
+
+  return (
+    <Box flexDirection= "column" >
+    <Box>
+    <Text>
+    <Text color="green" > { status === 'Initializing' && <Spinner type="dots" />}</Text>
+{ status === 'Initializing' && ' Setting up your project...' }
+{
+  status === 'Completed' && (
+    <Text>
+    Project < Text bold > { options.name } < /Text> has been initialized at <Text bold>{path.join(options.output, options.name)}</Text >
+      </Text>
+          )
+}
+</Text>
+  < /Box>
+{
+  status === 'Completed' && (
+    <Box>
+    <Text>
+    You can find the configuration files in the project directory.
+            < Newline />
+      Press ESC to exit.
+          < /Text>
+        < /Box>
+      )
+}
+</Box>
+  );
+};
+
+render(<App />);
