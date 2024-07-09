@@ -1,2 +1,0 @@
-Say "hello world" in language number: ${iteration}, only the translation, no introductions or delaminations:
-{{ Say.Languages }}
