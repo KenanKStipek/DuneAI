@@ -427,8 +427,8 @@ async function setup() {
         if (!example) {
           fs.ensureDirSync(path.resolve(outputDir, "src"));
 
-          const promptsContent = `# Example
-ExamplePrompt: "This is an example prompt."
+          const promptsContent = `# Test
+This is a test, please respond.
       `;
           fs.writeFileSync(
             path.join(projectDir, "src", "Prompts.prompt"),
@@ -436,18 +436,20 @@ ExamplePrompt: "This is an example prompt."
           );
 
           const indexContent = typescript
-            ? `
-import { Prompt, Dynamic } from 'duneai';
-const prompts = Prompt.importPrompts('./Prompts.prompt');
+            ? `// @ts-ignore
+import DuneAI from "duneai";
+const { TestPrompt } = DuneAI.importPrompts("src/Prompts.prompt");
 
 // Define a dynamic
-const dynamic = Dynamic.createDynamic({
-  name: 'ExampleDynamic',
-  prompts: [prompts.ExamplePrompt],
+const dynamic = DuneAI.createDynamic({
+  name: "TestDynamic",
+  prompts: [{ TestPrompt }],
 });
 
-// Run the dynamic
-dynamic.run();
+(async () => {
+  const result = await dynamic.run();
+  console.log({ result });
+})();
             `
             : `
 const DuneAI = require('duneai');
