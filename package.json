@@ -12,6 +12,8 @@
     "setup": "ts-node scripts/setup.js"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^0.0.28",
+    "@ai-sdk/openai": "^0.0.35",
     "@types/fs-extra": "^11.0.4",
     "@types/mustache": "^4.2.5",
     "@types/node": "^20.12.7",

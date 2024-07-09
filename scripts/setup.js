@@ -6,7 +6,8 @@ const path = require("path");
 const { execSync } = require("child_process");
 
 // Function to install dependencies
-const installDependencies = (projectDir, adapters, providers) => {
+const installDependencies = async (projectDir, adapters, providers) => {
+  const ora = (await import("ora")).default;
   const dependencies = [];
 
   if (adapters.includes("GPT4ALL")) {
@@ -36,11 +37,12 @@ const installDependencies = (projectDir, adapters, providers) => {
     ChromeAI: "jeasonstudio/chrome-ai",
   };
 
-  providers.forEach((provider) => {
-    if (providerDependencies[provider]) {
-      dependencies.push(providerDependencies[provider]);
-    }
-  });
+  providers !== "." &&
+    providers.forEach((provider) => {
+      if (providerDependencies[provider]) {
+        dependencies.push(providerDependencies[provider]);
+      }
+    });
 
   if (dependencies.length > 0) {
     const spinner = ora("Installing dependencies...").start();
@@ -66,6 +68,11 @@ const toCamelCase = (str) => {
     .replace(/\s+/g, "");
 };
 
+// Function to capitalize the first letter of each word
+const capitalize = (str) => {
+  return str.replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 // Function to create package.json file
 const createPackageJson = (projectDir, { typescript, projectName }) => {
   const packageJsonContent = {
@@ -76,7 +83,7 @@ const createPackageJson = (projectDir, { typescript, projectName }) => {
       start: typescript ? "ts src/index.ts" : "node src/index.js",
     },
     dependencies: {
-      "duneai/duneai": "latest",
+      duneai: "github:KenanKStipek/duneai",
     },
   };
 
@@ -87,17 +94,35 @@ const createPackageJson = (projectDir, { typescript, projectName }) => {
 };
 
 // Function to install selected factories
-const installFactories = (factories, projectDir) => {
+const installFactories = async (factories, projectDir) => {
+  const ora = (await import("ora")).default;
   factories.forEach((factory) => {
-    const factoryUrl = `https://github.com/DuneAIOrg/Factories/${factory}`;
+    const factoryUrl = `https://github.com/DuneAIOrg/Factories/${factory}/archive/refs/heads/main.zip`;
     const factoryDir = path.join(projectDir, "factories", factory);
     fs.ensureDirSync(factoryDir);
-    const spinner = ora(`Cloning ${factory}...`).start();
+    const spinner = ora(`Downloading ${factory}...`).start();
     try {
-      execSync(`git clone ${factoryUrl} ${factoryDir}`, { stdio: "inherit" });
-      spinner.succeed(`Cloned ${factory} successfully.`);
+      const zipPath = path.join(factoryDir, `${factory}.zip`);
+      const file = fs.createWriteStream(zipPath);
+      const request = https
+        .get(factoryUrl, (response) => {
+          response.pipe(file);
+          file.on("finish", () => {
+            file.close();
+            execSync(`unzip ${zipPath} -d ${factoryDir}`);
+            fs.removeSync(zipPath);
+            spinner.succeed(
+              `Downloaded and extracted ${factory} successfully.`,
+            );
+          });
+        })
+        .on("error", (err) => {
+          fs.unlinkSync(zipPath);
+          spinner.fail(`Error downloading ${factory}.`);
+          console.error(chalk.red(err));
+        });
     } catch (error) {
-      spinner.fail(`Error cloning ${factory}.`);
+      spinner.fail(`Error downloading ${factory}.`);
       console.error(chalk.red(error));
     }
   });
@@ -123,9 +148,9 @@ async function setup() {
     .option("-n, --name <projectName>", "Project name")
     .option("-f, --factory true|false", "Creating a factory?", false)
     .option("-o, --output <outputDir>", "Output directory")
-    .option("-w, --worm --vvorm", "Include VVORM", false)
+    .option("-w, --worm, --vvorm", "Include VVORM", false)
     .option("-a, --adapters <adapters>", "Include adapters", ".")
-    .option("-f, --factories <factories>", "Install Factories", ".")
+    .option("--factories <factories>", "Install Factories", ".")
     .option("-p, --providers <providers>", "Include providers", ".")
     .option(
       "-e, --example",
@@ -204,17 +229,25 @@ async function setup() {
   program.parse(process.argv);
 
   const options = program.opts();
-
-  const availableFactories = [
-    "Factory1",
-    "Factory2",
-    "Factory3",
-    "Factory4",
-    "Factory5",
-    "Factory6",
-    "Factory7",
-    "Factory8",
-  ];
+  const https = require("https");
+  const availableFactories = await new Promise((resolve, reject) => {
+    https
+      .get(
+        "https://raw.githubusercontent.com/DuneAIOrg/Factories/main/index.json",
+        (res) => {
+          let data = "";
+          res.on("data", (chunk) => {
+            data += chunk;
+          });
+          res.on("end", () => {
+            resolve(JSON.parse(data).map((factory) => factory.name));
+          });
+        },
+      )
+      .on("error", (err) => {
+        reject(err);
+      });
+  });
 
   const availableProviders = [
     "OpenAI",
@@ -258,7 +291,10 @@ async function setup() {
         type: "input",
         name: "output",
         message: "What is the output directory?",
-        default: (answers) => toCamelCase(answers.projectName || options.name),
+        default: (answers) =>
+          answers.factory
+            ? capitalize(toCamelCase(answers.projectName || options.name))
+            : toCamelCase(answers.projectName || options.name),
       });
     }
 
@@ -274,6 +310,7 @@ async function setup() {
       name: "worm",
       message: "Would you like to include VVORM?",
       default: false,
+      when: (answers) => !answers.factory,
     });
 
     questions.push({
@@ -282,6 +319,7 @@ async function setup() {
       message:
         "Would you like to include the default example 'Hello World' skeleton?",
       default: false,
+      when: (answers) => !answers.factory,
     });
 
     questions.push({
@@ -293,7 +331,7 @@ async function setup() {
         { name: "Vercel AI", checked: true, value: "Vercel AI" },
         { name: "Standard Diffusion", value: "Standard Diffusion" },
       ],
-      when: () => options.adapters === ".",
+      when: (answers) => !answers.factory && options.adapters === ".",
     });
 
     questions.push({
@@ -311,7 +349,7 @@ async function setup() {
           options.adapters === "."
             ? answers.adapters
             : options.adapters.split(",");
-        return selectedAdapters.includes("Vercel AI");
+        return !answers.factory && selectedAdapters.includes("Vercel AI");
       },
     });
 
@@ -321,7 +359,7 @@ async function setup() {
       message: "Select factories to install:",
       choices: availableFactories,
       pageSize: 10,
-      when: () => options.factories === ".",
+      when: (answers) => !answers.factory && options.factories === ".",
     });
 
     const answers = await inquirer.prompt(questions);
@@ -347,34 +385,35 @@ async function setup() {
       const spinner = ora("Creating project structure...").start();
 
       try {
-        const projectDir = outputDir;
-        const skeletonDir = path.join(__dirname, "..", "src", "skeleton");
-
+        const projectDir = path.resolve(outputDir);
         fs.ensureDirSync(projectDir);
-        fs.copySync(skeletonDir, projectDir);
 
-        createPackageJson(projectDir, {
-          projectName,
-          providers,
-          typescript,
-          worm,
-        });
-
-        if (factories && factories.length > 0) {
+        if (!factory && factories && factories.length > 0) {
           installFactories(factories, projectDir);
         }
 
-        const configContent = `Project Name: ${projectName}\nAdapters: ${adapters}\nFactories: ${factories}\nProviders: ${providers}\nInclude VVORM: ${worm}\nInclude Example: ${example}`;
-        fs.writeFileSync(path.join(projectDir, "README.md"), configContent);
+        if (!factory) {
+          createPackageJson(projectDir, {
+            projectName,
+            providers,
+            typescript,
+            worm,
+          });
 
-        // Create .env file with API key placeholders
-        let envContent = ``;
-        providers.forEach((provider) => {
-          envContent += `${provider.toUpperCase().replace(/\s+/g, "_")}_API_KEY=###\n`;
-        });
-        fs.writeFileSync(path.join(projectDir, ".env"), envContent);
+          const configContent = `Project Name: ${projectName}\nAdapters: ${adapters}\nFactories: ${factories}\nProviders: ${providers}\nInclude VVORM: ${worm}\nInclude Example: ${example}`;
+          fs.writeFileSync(path.join(projectDir, "README.md"), configContent);
+
+          // Create .env file with API key placeholders
+          let envContent = ``;
+          providers?.forEach((provider) => {
+            envContent += `${provider.toUpperCase().replace(/\s+/g, "_")}_API_KEY=###\n`;
+          });
+          fs.writeFileSync(path.join(projectDir, ".env"), envContent);
+        }
 
         if (!example) {
+          fs.ensureDirSync(path.resolve(outputDir, "src"));
+
           const promptsContent = `# Example
 ExamplePrompt: "This is an example prompt."
       `;
@@ -415,6 +454,7 @@ console.log(prompts);
 
   const runSetup = async () => {
     const bannerText = `
+      ............................................................
       ░.......░░░..░░░░..░░...░░░..░░........░░░......░░░........░
       ▒..▒▒▒▒..▒▒..▒▒▒▒..▒▒....▒▒..▒▒..▒▒▒▒▒▒▒▒..▒▒▒▒..▒▒▒▒▒..▒▒▒▒
       ▓..▓▓▓▓..▓▓..▓▓▓▓..▓▓..▓..▓..▓▓......▓▓▓▓..▓▓▓▓..▓▓▓▓▓..▓▓▓▓
@@ -434,8 +474,10 @@ console.log(prompts);
         answers.adapters,
         answers.factories,
         answers.providers,
+        answers.typescript,
         answers.worm,
         answers.example,
+        answers.factory,
       );
     }, 450);
   };

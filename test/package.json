@@ -1,11 +1,14 @@
 {
   "name": "test",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "0.1.0",
+  "main": "src/index.ts",
   "scripts": {
-    "start": "node index.js"
+    "start": "ts src/index.ts"
   },
   "dependencies": {
-    "duneai": "^1.0.0"
+    "@ai-sdk/anthropic": "^0.0.28",
+    "@ai-sdk/openai": "^0.0.35",
+    "duneai": "github:KenanKStipek/duneai",
+    "gpt4all": "^4.0.0"
   }
 }
