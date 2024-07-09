@@ -438,12 +438,12 @@ This is a test, please respond.
           const indexContent = typescript
             ? `// @ts-ignore
 import DuneAI from "duneai";
-const { TestPrompt } = DuneAI.importPrompts("src/Prompts.prompt");
+const { Test } = DuneAI.importPrompts("src/Prompts.prompt");
 
 // Define a dynamic
 const dynamic = DuneAI.createDynamic({
   name: "TestDynamic",
-  prompts: [{ TestPrompt }],
+  prompts: [{ Test }],
 });
 
 (async () => {
@@ -452,17 +452,19 @@ const dynamic = DuneAI.createDynamic({
 })();
             `
             : `
-const DuneAI = require('duneai');
-const prompts = DuneAI.Prompt.importPrompts('./Prompts.prompt');
+const DuneAI = require("duneai");
+const { Test } = DuneAI.importPrompts("src/Prompts.prompt");
 
 // Define a dynamic
-const dynamic = Dynamic.createDynamic({
-  name: 'ExampleDynamic',
-  prompts: [prompts.ExamplePrompt],
-};
+const dynamic = DuneAI.createDynamic({
+  name: "TestDynamic",
+  prompts: [{ Test }],
+});
 
-// Run the dynamic
-dynamic.run();
+(async () => {
+  const result = await dynamic.run();
+  console.log({ result });
+})();
             `;
 
           fs.writeFileSync(
