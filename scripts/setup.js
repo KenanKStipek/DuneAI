@@ -121,6 +121,7 @@ async function setup() {
     .name("setup")
     .description("Setup script for initializing DuneAI projects")
     .option("-n, --name <projectName>", "Project name")
+    .option("-f, --factory true|false", "Creating a factory?", false)
     .option("-o, --output <outputDir>", "Output directory")
     .option("-w, --worm --vvorm", "Include VVORM", false)
     .option("-a, --adapters <adapters>", "Include adapters", ".")
@@ -243,6 +244,15 @@ async function setup() {
       });
     }
 
+    if (!options.factory) {
+      questions.push({
+        type: "confirm",
+        name: "factory",
+        message: "Are you creating a Factory?",
+        default: false,
+      });
+    }
+
     if (!options.output) {
       questions.push({
         type: "input",
@@ -331,6 +341,7 @@ async function setup() {
     typescript,
     worm,
     example,
+    factory,
   ) => {
     try {
       const spinner = ora("Creating project structure...").start();
