@@ -4,21 +4,31 @@ const { Command } = require("commander");
 const fs = require("fs-extra");
 const path = require("path");
 const { execSync } = require("child_process");
-const download = require("download-git-repo");
 
 // Function to install dependencies
-const installDependencies = async (projectDir, adapters, providers) => {
+const installDependencies = async (
+  projectDir,
+  adapters,
+  providers,
+  typescript,
+) => {
   const ora = (await import("ora")).default;
   const dependencies = [];
 
+  // dependencies.push("duneai/duneai");
+
+  if (typescript) {
+    dependencies.push("typescript");
+    dependencies.push("ts-node");
+  }
   if (adapters.includes("GPT4ALL")) {
     dependencies.push("gpt4all");
   }
-  if (adapters.includes("AI")) {
-    dependencies.push("@ai-sdk/vercelai");
+  if (adapters.includes("Vercel AI")) {
+    dependencies.push("ai");
   }
   if (adapters.includes("SD")) {
-    dependencies.push("@ai-sdk/standard-diffusion");
+    // dependencies.push("@ai-sdk/standard-diffusion");
   }
 
   const providerDependencies = {
@@ -81,7 +91,7 @@ const createPackageJson = (projectDir, { typescript, projectName }) => {
     version: "0.1.0",
     main: typescript ? "src/index.ts" : "src/index.js",
     scripts: {
-      start: typescript ? "ts src/index.ts" : "node src/index.js",
+      start: typescript ? "ts-node src/index.ts" : "node src/index.js",
     },
     dependencies: {
       duneai: "github:KenanKStipek/duneai",
@@ -345,7 +355,7 @@ async function setup() {
         value: provider,
         checked: provider === "OpenAI" || provider === "Anthropic",
       })),
-      pageSize: 10,
+      pageSize: 5,
       when: (answers) => {
         const selectedAdapters =
           options.adapters === "."
@@ -360,7 +370,7 @@ async function setup() {
       name: "factories",
       message: "Select factories to install:",
       choices: availableFactories,
-      pageSize: 10,
+      pageSize: 5,
       when: (answers) => !answers.factory && options.factories === ".",
     });
 
@@ -425,15 +435,36 @@ ExamplePrompt: "This is an example prompt."
             promptsContent,
           );
 
-          const indexContent = `
+          const indexContent = typescript
+            ? `
+import { Prompt, Dynamic } from 'duneai';
+const prompts = Prompt.importPrompts('./Prompts.prompt');
+
+// Define a dynamic
+const dynamic = Dynamic.createDynamic({
+  name: 'ExampleDynamic',
+  prompts: [prompts.ExamplePrompt],
+});
+
+// Run the dynamic
+dynamic.run();
+            `
+            : `
 const DuneAI = require('duneai');
 const prompts = DuneAI.Prompt.importPrompts('./Prompts.prompt');
 
-// Example usage of imported prompts
-console.log(prompts);
-        `;
+// Define a dynamic
+const dynamic = Dynamic.createDynamic({
+  name: 'ExampleDynamic',
+  prompts: [prompts.ExamplePrompt],
+};
+
+// Run the dynamic
+dynamic.run();
+            `;
+
           fs.writeFileSync(
-            path.join(projectDir, "src", "index.ts"),
+            path.join(projectDir, "src", typescript ? "index.ts" : "index.js"),
             indexContent,
           );
         } else {
@@ -443,7 +474,7 @@ console.log(prompts);
 
         // Install dependencies based on selections
         console.log(chalk.bgGrey(chalk.yellow("\nInstalling Dependencies")));
-        await installDependencies(projectDir, adapters, providers);
+        await installDependencies(projectDir, adapters, providers, typescript);
 
         const adapterRequirements =
           adapters.includes("GPT4ALL") &&

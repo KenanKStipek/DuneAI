@@ -10,7 +10,6 @@ yarn.lock
 .pnp.js
 
 # TypeScript
-dist/
 *.tsbuildinfo
 
 # Environment Variables

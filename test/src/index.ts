@@ -1,7 +1,11 @@
+import { Prompt, Dynamic } from "duneai/src";
+const prompts = Prompt.importPrompts("./Prompts.prompt");
 
-const DuneAI = require('duneai');
-const prompts = DuneAI.Prompt.importPrompts('./Prompts.prompt');
+// Define a dynamic
+const dynamic = Dynamic.createDynamic({
+  name: "ExampleDynamic",
+  prompts: [prompts.ExamplePrompt],
+});
 
-// Example usage of imported prompts
-console.log(prompts);
-        
+// Run the dynamic
+dynamic.run();
