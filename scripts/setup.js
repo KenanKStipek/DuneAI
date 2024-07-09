@@ -4,6 +4,7 @@ const { Command } = require("commander");
 const fs = require("fs-extra");
 const path = require("path");
 const { execSync } = require("child_process");
+const download = require("download-git-repo");
 
 // Function to install dependencies
 const installDependencies = async (projectDir, adapters, providers) => {
@@ -95,37 +96,39 @@ const createPackageJson = (projectDir, { typescript, projectName }) => {
 
 // Function to install selected factories
 const installFactories = async (factories, projectDir) => {
-  const ora = (await import("ora")).default;
+  const chalk = (await import("chalk")).default;
+  const tmpDir = path.join(projectDir, "tmpFactories");
+
+  // Clone the entire repository
+  const repoUrl = "https://github.com/DuneAIOrg/Factories.git";
+  console.log(`Cloning repository from ${repoUrl} to ${tmpDir}`);
+
+  try {
+    execSync(`git clone ${repoUrl} ${tmpDir}`, { stdio: "inherit" });
+  } catch (err) {
+    console.error(chalk.red(`Failed to clone repository: ${err.message}`));
+    return;
+  }
+
+  // Copy the selected factories to the project directory
   factories.forEach((factory) => {
-    const factoryUrl = `https://github.com/DuneAIOrg/Factories/${factory}/archive/refs/heads/main.zip`;
-    const factoryDir = path.join(projectDir, "factories", factory);
-    fs.ensureDirSync(factoryDir);
-    const spinner = ora(`Downloading ${factory}...`).start();
-    try {
-      const zipPath = path.join(factoryDir, `${factory}.zip`);
-      const file = fs.createWriteStream(zipPath);
-      const request = https
-        .get(factoryUrl, (response) => {
-          response.pipe(file);
-          file.on("finish", () => {
-            file.close();
-            execSync(`unzip ${zipPath} -d ${factoryDir}`);
-            fs.removeSync(zipPath);
-            spinner.succeed(
-              `Downloaded and extracted ${factory} successfully.`,
-            );
-          });
-        })
-        .on("error", (err) => {
-          fs.unlinkSync(zipPath);
-          spinner.fail(`Error downloading ${factory}.`);
-          console.error(chalk.red(err));
-        });
-    } catch (error) {
-      spinner.fail(`Error downloading ${factory}.`);
-      console.error(chalk.red(error));
+    const srcFactoryDir = path.join(tmpDir, factory);
+    const destFactoryDir = path.join(projectDir, "src", "factories", factory);
+
+    if (fs.existsSync(srcFactoryDir)) {
+      fs.ensureDirSync(destFactoryDir);
+      fs.copySync(srcFactoryDir, destFactoryDir);
+      console.log(`Successfully copied factory ${factory}`);
+    } else {
+      console.error(
+        chalk.red(`Factory ${factory} does not exist in the repository`),
+      );
     }
   });
+
+  // Remove the temporary cloned repository
+  fs.removeSync(tmpDir);
+  console.log(`Removed temporary directory ${tmpDir}`);
 };
 
 // Dynamically import chalk, ora, inquirer, and chalk-animation
@@ -179,9 +182,7 @@ async function setup() {
       "                                    Example: --output ./myProjectDir",
     );
     console.log("");
-    console.log(
-      "  -w, --worm --vvorm                Include VVORM in the project",
-    );
+    console.log("  -w, --worm                Include WORM in the project");
     console.log("                                    Default: false");
     console.log("                                    Example: --worm");
     console.log("");
@@ -308,7 +309,8 @@ async function setup() {
     questions.push({
       type: "confirm",
       name: "worm",
-      message: "Would you like to include VVORM?",
+      message:
+        "Would you like to include and use WORM (Workflow Orchestration and Regenerative Monitor)?",
       default: false,
       when: (answers) => !answers.factory,
     });
@@ -317,7 +319,7 @@ async function setup() {
       type: "confirm",
       name: "example",
       message:
-        "Would you like to include the default example 'Hello World' skeleton?",
+        "Would you like to include the example 'Hello World' orchestration?",
       default: false,
       when: (answers) => !answers.factory,
     });
@@ -370,7 +372,7 @@ async function setup() {
     };
   };
 
-  const createProjectStructure = (
+  const createProjectStructure = async (
     projectName,
     outputDir,
     adapters,
@@ -400,14 +402,15 @@ async function setup() {
             worm,
           });
 
-          const configContent = `Project Name: ${projectName}\nAdapters: ${adapters}\nFactories: ${factories}\nProviders: ${providers}\nInclude VVORM: ${worm}\nInclude Example: ${example}`;
+          const configContent = `Project Name: ${projectName}\nAdapters: ${adapters}\nFactories: ${factories}\nProviders: ${providers}\nInclude WORM: ${worm}\nInclude Example: ${example}`;
           fs.writeFileSync(path.join(projectDir, "README.md"), configContent);
 
           // Create .env file with API key placeholders
           let envContent = ``;
-          providers?.forEach((provider) => {
-            envContent += `${provider.toUpperCase().replace(/\s+/g, "_")}_API_KEY=###\n`;
-          });
+          providers !== "." &&
+            providers?.forEach((provider) => {
+              envContent += `${provider.toUpperCase().replace(/\s+/g, "_")}_API_KEY=###\n`;
+            });
           fs.writeFileSync(path.join(projectDir, ".env"), envContent);
         }
 
@@ -439,9 +442,23 @@ console.log(prompts);
         }
 
         // Install dependencies based on selections
-        installDependencies(projectDir, adapters, providers);
+        console.log(chalk.bgGrey(chalk.yellow("\nInstalling Dependencies")));
+        await installDependencies(projectDir, adapters, providers);
 
-        spinner.succeed("Project structure created successfully.");
+        const adapterRequirements =
+          adapters.includes("GPT4ALL") &&
+          `If you haven't already, install and configure GPT4ALL. More information here: https://github.com/nomic-ai/gpt4all `;
+
+        const envRequirements =
+          providers !== "." &&
+          `Add your API key(s) to the .env file for these providers: ${providers.join(", ")}`;
+
+        const instructions = `${adapterRequirements}\n${envRequirements}\n\nUse \`cd ${projectDir} && npm run start\` to run project`;
+
+        const onlyMessage = `${projectName} has been created successfully.`;
+
+        spinner.succeed(onlyMessage);
+        console.log(chalk.bgGrey(chalk.yellow(instructions)));
       } catch (error) {
         spinner.fail("Error creating project structure.");
         console.error(chalk.red(error));
