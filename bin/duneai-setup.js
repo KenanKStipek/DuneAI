@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-require("../scripts/setup");
+require("../src/scripts/setup.js");
