@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "run": "ts-node src/skeleton/src/index.ts",
-    "setup": "node bin/duneai-setup.js"
+    "setup": "node duneai-setup.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^0.0.28",
@@ -42,6 +42,6 @@
     "ts-node": "^9.0.0"
   },
   "bin": {
-    "init": "./bin/duneai-setup.js"
+    "init": "./duneai-setup.js"
   }
 }
