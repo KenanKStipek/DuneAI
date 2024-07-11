@@ -1,2 +1,4 @@
 #!/usr/bin/env node
-require(__dirname + "/../src/scripts/setup.js");
+
+const path = require("path");
+require(path.join(__dirname, "/../src/scripts/setup.js"));
